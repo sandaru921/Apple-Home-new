@@ -44,7 +44,7 @@ export default function SalesPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold">

@@ -1,9 +1,10 @@
 // components/AdminSidebar.tsx
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, ShoppingCart, Users, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Menu, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 const navItems = [
@@ -17,9 +18,29 @@ const navItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg z-50">
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-white rounded-lg shadow-md border border-gray-200 text-gray-700"
+      >
+        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          onClick={() => setIsOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        />
+      )}
+
+      <aside className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-xl z-50 transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
       {/* Logo */}
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-2xl font-bold">
@@ -63,5 +84,6 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }
