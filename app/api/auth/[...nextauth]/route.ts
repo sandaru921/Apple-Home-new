@@ -2,6 +2,9 @@
 import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { connectDB } from '@/lib/db';
+import User from '@/models/User';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,15 +15,33 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        // FIX: Check if credentials exists
         if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
-        if (credentials.username === 'admin' && credentials.password === 'admin123') {
-          return { id: '1', name: 'Admin', email: 'admin@applehome.lk' };
+        try {
+          await connectDB();
+          const user = await User.findOne({ username: credentials.username });
+
+          if (!user) {
+            return null;
+          }
+
+          const passwordsMatch = await bcrypt.compare(credentials.password, user.password);
+          if (!passwordsMatch) {
+            return null;
+          }
+
+          return { 
+            id: user._id.toString(), 
+            name: user.username, 
+            email: user.email,
+            role: user.role 
+          };
+        } catch (error) {
+          console.error('Error during authorization', error);
+          return null;
         }
-        return null;
       },
     }),
   ],
@@ -29,11 +50,17 @@ export const authOptions: NextAuthOptions = {
     signIn: '/admin/login',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+        token.id = user.id;
+      }
+      return token;
+    },
     async session({ session, token }) {
-      // FIX: Type session properly
       if (session.user) {
-        session.user.role = 'admin';
-        session.user.id = token.sub || '1';
+        (session.user as any).role = token.role;
+        (session.user as any).id = token.id;
       }
       return session;
     },

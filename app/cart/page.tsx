@@ -9,10 +9,13 @@ import { Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 
 interface CartItem {
   _id: string;
+  cartItemId?: string;
   model: string;
   price: number;
   imageUrl: string;
   quantity: number;
+  selectedColor?: string;
+  selectedStorage?: string;
 }
 
 export default function CartPage() {
@@ -36,19 +39,20 @@ export default function CartPage() {
   }, [cart, isLoading]);
 
   // Update quantity
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = (idToUpdate: string, delta: number) => {
     setCart(prev =>
-      prev.map(item =>
-        item._id === id
+      prev.map(item => {
+        const identifier = item.cartItemId || item._id;
+        return identifier === idToUpdate
           ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
+          : item;
+      })
     );
   };
 
   // Remove item
-  const removeItem = (id: string) => {
-    setCart(prev => prev.filter(item => item._id !== id));
+  const removeItem = (idToRemove: string) => {
+    setCart(prev => prev.filter(item => (item.cartItemId || item._id) !== idToRemove));
   };
 
   // Calculate totals
@@ -101,9 +105,11 @@ export default function CartPage() {
             <div className="grid lg:grid-cols-3 gap-8">
               {/* CART ITEMS */}
               <div className="lg:col-span-2 space-y-6">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const itemKey = item.cartItemId || item._id;
+                  return (
                   <div
-                    key={item._id}
+                    key={itemKey}
                     className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/20 shadow-xl p-6 hover:shadow-2xl transition-all duration-300"
                   >
                     <div className="flex gap-6">
@@ -120,7 +126,13 @@ export default function CartPage() {
 
                       {/* Details */}
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{item.model}</h3>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">{item.model}</h3>
+                        {(item.selectedStorage || item.selectedColor) && (
+                          <p className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                            {item.selectedStorage && <span className="bg-gray-100 px-2 py-1 rounded-md">{item.selectedStorage}</span>}
+                            {item.selectedColor && <span className="bg-gray-100 px-2 py-1 rounded-md">{item.selectedColor}</span>}
+                          </p>
+                        )}
                         <p className="text-2xl font-bold text-[#7CB342] mb-4">
                           LKR {(item.price * item.quantity).toLocaleString()}
                         </p>
@@ -128,14 +140,14 @@ export default function CartPage() {
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => updateQuantity(item._id, -1)}
+                            onClick={() => updateQuantity(itemKey, -1)}
                             className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-gray-200 transition"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
                           <span className="w-12 text-center font-semibold text-lg">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item._id, 1)}
+                            onClick={() => updateQuantity(itemKey, 1)}
                             className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-gray-200 transition"
                           >
                             <Plus className="w-4 h-4" />
@@ -145,14 +157,14 @@ export default function CartPage() {
 
                       {/* Remove */}
                       <button
-                        onClick={() => removeItem(item._id)}
+                        onClick={() => removeItem(itemKey)}
                         className="p-3 bg-red-50 rounded-xl hover:bg-red-100 transition self-start"
                       >
                         <Trash2 className="w-5 h-5 text-red-600" />
                       </button>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
 
               {/* ORDER SUMMARY */}

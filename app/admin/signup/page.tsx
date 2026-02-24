@@ -1,31 +1,40 @@
-// app/admin/login/page.tsx
+// app/admin/signup/page.tsx
 'use client';
 
-import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function AdminLogin() {
+export default function AdminSignup() {
+  const router = useRouter();
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const res = await signIn('credentials', {
-      username,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-    if (res?.error) {
-      setError('Invalid username or password');
-    } else {
-      window.location.href = '/admin/dashboard';
+      if (res.ok) {
+        router.push('/admin/login');
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Signup failed');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
     }
+
     setLoading(false);
   };
 
@@ -36,23 +45,23 @@ export default function AdminLogin() {
       <div className="absolute top-20 left-20 w-96 h-96 bg-[#7CB342]/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#7CB342]/5 rounded-full blur-3xl"></div>
 
-      {/* Login Card */}
+      {/* Signup Card */}
       <form
-        onSubmit={handleLogin}
-        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 border border-gray-100"
+        onSubmit={handleSignup}
+        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 border border-gray-100 mt-16"
       >
         {/* Logo + Title */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-[#7CB342]/10 rounded-2xl mb-6">
             <svg className="w-10 h-10 text-[#7CB342]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
           <h1 className="text-4xl font-bold">
-            <span className="text-black">Admin</span>
-            <span className="text-[#7CB342]"> Panel</span>
+            <span className="text-black">Sign </span>
+            <span className="text-[#7CB342]">Up</span>
           </h1>
-          <p className="text-gray-500 mt-2 text-sm">Login to manage Apple Home</p>
+          <p className="text-gray-500 mt-2 text-sm">Create a new account</p>
         </div>
 
         {/* Username */}
@@ -64,6 +73,19 @@ export default function AdminLogin() {
             onChange={(e) => setUsername(e.target.value)}
             className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7CB342] focus:border-transparent transition"
             placeholder="Enter username"
+            required
+          />
+        </div>
+
+        {/* Email */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7CB342] focus:border-transparent transition"
+            placeholder="Enter email"
             required
           />
         </div>
@@ -94,9 +116,9 @@ export default function AdminLogin() {
             </svg>
           ) : (
             <>
-              <span>Login</span>
+              <span>Sign Up</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </>
           )}
@@ -110,10 +132,10 @@ export default function AdminLogin() {
         )}
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/admin/signup" className="text-[#7CB342] font-semibold hover:underline">
-            Sign Up
-          </a>
+          Already have an account?{' '}
+          <Link href="/admin/login" className="text-[#7CB342] font-semibold hover:underline">
+            Login
+          </Link>
         </div>
       </form>
     </div>

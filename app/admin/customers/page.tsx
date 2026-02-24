@@ -1,7 +1,7 @@
 // app/admin/customers/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 import { Search, Mail, Eye, Star } from 'lucide-react';
 
@@ -17,11 +17,25 @@ interface Customer {
 
 export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [customers] = useState<Customer[]>([
-    { _id: '1', name: 'Nimal Perera', email: 'nimal@gmail.com', orders: 12, spent: 2400000, joined: '2024-01-15', loyalty: 'Gold' },
-    { _id: '2', name: 'Kamal Silva', email: 'kamal@yahoo.com', orders: 8, spent: 1200000, joined: '2024-03-20', loyalty: 'Silver' },
-    { _id: '3', name: 'Sunil Jayasinghe', email: 'sunil@outlook.com', orders: 3, spent: 450000, joined: '2025-02-10', loyalty: 'Bronze' },
-  ]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch('/api/admin/customers');
+        if (res.ok) {
+          const data = await res.json();
+          setCustomers(data.customers);
+        }
+      } catch (err) {
+        console.error('Failed to load customers');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCustomers();
+  }, []);
 
   const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,11 +76,18 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
+        {loading ? (
+          <div className="animate-pulse flex flex-col gap-4">
+            <div className="h-16 bg-gray-200 rounded-xl w-full"></div>
+            <div className="h-16 bg-gray-200 rounded-xl w-full"></div>
+            <div className="h-16 bg-gray-200 rounded-xl w-full"></div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Total Spent</th>
@@ -114,6 +135,7 @@ export default function CustomersPage() {
             </table>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

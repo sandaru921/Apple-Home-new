@@ -1,10 +1,36 @@
 // app/admin/analytics/page.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
-import { TrendingUp, Users, ShoppingBag, DollarSign } from 'lucide-react';
+import { TrendingUp, Users, ShoppingBag, DollarSign, Loader2 } from 'lucide-react';
 
 export default function AnalyticsPage() {
+  const [data, setData] = useState({
+    revenue: 'LKR 0',
+    customers: 0,
+    orders: 0,
+    conversion: '0.0%'
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch('/api/admin/analytics');
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (err) {
+        console.error('Failed to load analytics', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
@@ -18,40 +44,46 @@ export default function AnalyticsPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <DollarSign className="w-6 h-6 text-[#7CB342]" />
-              <span className="text-sm text-green-600">+22%</span>
-            </div>
-            <p className="text-sm text-gray-500">Revenue</p>
-            <p className="text-2xl font-bold">LKR 86.4M</p>
+        {loading ? (
+          <div className="flex items-center justify-center p-20">
+            <Loader2 className="w-12 h-12 text-[#7CB342] animate-spin" />
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <Users className="w-6 h-6 text-[#7CB342]" />
-              <span className="text-sm text-green-600">+15%</span>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between mb-3">
+                <DollarSign className="w-6 h-6 text-[#7CB342]" />
+                <span className="text-sm font-medium text-green-600">Lifetime</span>
+              </div>
+              <p className="text-sm text-gray-500">Revenue</p>
+              <p className="text-2xl font-bold">{data.revenue}</p>
             </div>
-            <p className="text-sm text-gray-500">Customers</p>
-            <p className="text-2xl font-bold">1,842</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <ShoppingBag className="w-6 h-6 text-[#7CB342]" />
-              <span className="text-sm text-green-600">+8%</span>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between mb-3">
+                <Users className="w-6 h-6 text-[#7CB342]" />
+                <span className="text-sm font-medium text-green-600">Total Registered</span>
+              </div>
+              <p className="text-sm text-gray-500">Customers</p>
+              <p className="text-2xl font-bold">{data.customers.toLocaleString()}</p>
             </div>
-            <p className="text-sm text-gray-500">Orders</p>
-            <p className="text-2xl font-bold">3,210</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-6 h-6 text-[#7CB342]" />
-              <span className="text-sm text-green-600">+5.2%</span>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between mb-3">
+                <ShoppingBag className="w-6 h-6 text-[#7CB342]" />
+                <span className="text-sm font-medium text-green-600">Gross</span>
+              </div>
+              <p className="text-sm text-gray-500">Orders</p>
+              <p className="text-2xl font-bold">{data.orders.toLocaleString()}</p>
             </div>
-            <p className="text-sm text-gray-500">Conversion</p>
-            <p className="text-2xl font-bold">3.8%</p>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between mb-3">
+                <TrendingUp className="w-6 h-6 text-[#7CB342]" />
+                <span className="text-sm font-medium text-gray-400">Estimate</span>
+              </div>
+              <p className="text-sm text-gray-500">Conversion</p>
+              <p className="text-2xl font-bold">{data.conversion}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

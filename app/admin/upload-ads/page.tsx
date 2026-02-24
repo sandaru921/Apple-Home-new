@@ -1,9 +1,13 @@
-// app/admin/page.tsx
+// app/admin/upload-ads/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { IPHONE_MODELS } from '@/lib/iphone-models';
+import { useState, useEffect } from 'react';
 import { Upload, Plus, X } from 'lucide-react';
+
+interface IPhoneData {
+  _id: string;
+  model: string;
+}
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<'slides' | 'offers'>('slides');
@@ -13,6 +17,24 @@ export default function AdminPanel() {
   const [endDate, setEndDate] = useState('');
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [availablePhones, setAvailablePhones] = useState<IPhoneData[]>([]);
+
+  useEffect(() => {
+    const fetchPhones = async () => {
+      try {
+        const res = await fetch('/api/iphones');
+        if (res.ok) {
+          const data = await res.json();
+          setAvailablePhones(data);
+        }
+      } catch (err) {
+        console.error('Failed to load iPhones', err);
+      }
+    };
+    if (activeTab === 'offers') {
+      fetchPhones();
+    }
+  }, [activeTab]);
 
   const uploadSlide = async () => {
     if (!slideFile) return;
@@ -57,27 +79,27 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-bg-dark py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">Admin Panel</h1>
 
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab('slides')}
-            className={`px-6 py-2 rounded-xl font-medium ${activeTab === 'slides' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800'}`}
+            className={`px-6 py-2 rounded-xl font-medium ${activeTab === 'slides' ? 'bg-[#7CB342] text-white' : 'bg-gray-200 dark:bg-gray-800'}`}
           >
             Slideshow
           </button>
           <button
             onClick={() => setActiveTab('offers')}
-            className={`px-6 py-2 rounded-xl font-medium ${activeTab === 'offers' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800'}`}
+            className={`px-6 py-2 rounded-xl font-medium ${activeTab === 'offers' ? 'bg-[#7CB342] text-white' : 'bg-gray-200 dark:bg-gray-800'}`}
           >
             Offers
           </button>
         </div>
 
         {activeTab === 'slides' && (
-          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
             <h2 className="text-xl font-semibold mb-4">Upload Slideshow Image</h2>
             <input
               type="file"
@@ -88,7 +110,7 @@ export default function AdminPanel() {
             <button
               onClick={uploadSlide}
               disabled={!slideFile || uploading}
-              className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary-dark disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-3 bg-[#7CB342] text-white rounded-xl hover:bg-[#6fa135] disabled:opacity-50 flex items-center gap-2 transition"
             >
               <Upload className="w-5 h-5" />
               {uploading ? 'Uploading...' : 'Upload Slide'}
@@ -97,16 +119,16 @@ export default function AdminPanel() {
         )}
 
         {activeTab === 'offers' && (
-          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg space-y-4">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 space-y-4">
             <h2 className="text-xl font-semibold mb-4">Create Flash Offer</h2>
             <select
               value={offeriPhone}
               onChange={(e) => setOfferiPhone(e.target.value)}
-              className="w-full px-4 py-3 border rounded-xl dark:bg-gray-800"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl dark:bg-gray-900 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7CB342]"
             >
-              <option value="">Select iPhone</option>
-              {IPHONE_MODELS.map(m => (
-                <option key={m} value={m}>{m}</option>
+              <option value="">Select an iPhone from Database</option>
+              {availablePhones.map(phone => (
+                <option key={phone._id} value={phone._id}>{phone.model}</option>
               ))}
             </select>
             <input

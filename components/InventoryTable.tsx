@@ -8,7 +8,8 @@ interface Product {
   _id: string;
   model: string;
   price: number;
-  stock: number;
+  stock?: number;
+  condition?: string;
   imageUrl: string;
 }
 
@@ -26,6 +27,7 @@ export default function InventoryTable({ products, onEdit, onDelete }: Props) {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -34,7 +36,7 @@ export default function InventoryTable({ products, onEdit, onDelete }: Props) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {products.map((product) => {
-              const isLowStock = product.stock < 10;
+              const isLowStock = (product.stock || 0) < 10;
               return (
                 <tr key={product._id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -53,11 +55,16 @@ export default function InventoryTable({ products, onEdit, onDelete }: Props) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-700 font-medium">
+                      {product.condition || 'New'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-[#7CB342] font-bold">LKR {product.price.toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`font-medium ${isLowStock ? 'text-red-600' : 'text-gray-900'}`}>
-                      {product.stock}
+                      {product.stock ?? 0}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -1,56 +1,75 @@
 // app/admin/inventory/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 import InventoryTable from '@/components/InventoryTable';
 import AddProductModal from '@/components/AddProductModal';
-import { Plus, Search, AlertCircle } from 'lucide-react';
+import EditProductModal from '@/components/EditProductModal';
+import { Plus, Search, AlertCircle, Loader2 } from 'lucide-react';
 
 interface Product {
   _id: string;
+  category?: string;
   model: string;
   price: number;
   stock: number;
+  colors?: string[];
+  storage?: string[];
+  condition?: string;
+  batteryHealth?: number;
+  isUnlocked?: boolean;
+  description: string;
   imageUrl: string;
+  featured?: boolean;
 }
 
 export default function InventoryPage() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      _id: '1',
-      model: 'iPhone 15 Pro Max',
-      price: 349999,
-      stock: 45,
-      imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
-    },
-    {
-      _id: '2',
-      model: 'iPhone 15',
-      price: 249999,
-      stock: 8,
-      imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
-    },
-    {
-      _id: '3',
-      model: 'iPhone 14',
-      price: 199999,
-      stock: 120,
-      imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
-    },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleAdd = (newProduct: Omit<Product, '_id'>) => {
-    const product = { ...newProduct, _id: Date.now().toString() };
-    setProducts((prev) => [...prev, product]);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/iphones');
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      setProducts(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleAdd = (newProduct: Product) => {
+    setProducts((prev) => [newProduct, ...prev]);
+  };
+
+  const handleUpdate = (updatedProduct: Product) => {
+    setProducts((prev) => prev.map(p => p._id === updatedProduct._id ? updatedProduct : p));
+  };
+
+  const handleDelete = async (id: string) => {
     if (confirm('Delete this product?')) {
-      setProducts((prev) => prev.filter((p) => p._id !== id));
+      try {
+        const res = await fetch(`/api/iphones/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete product');
+        
+        setProducts((prev) => prev.filter((p) => p._id !== id));
+      } catch (err: any) {
+        alert(err.message);
+      }
     }
   };
 
@@ -70,7 +89,7 @@ export default function InventoryPage() {
               <span className="text-black">Inventory </span>
               <span className="text-[#7CB342]">Management</span>
             </h1>
-            <p className="text-gray-600 mt-1">Track and manage your iPhone stock</p>
+            <p className="text-gray-600 mt-1">Track and manage your iPhone catalog</p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -95,28 +114,47 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Low Stock Alert */}
-        {products.some(p => p.stock < 10) && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-            <p className="text-red-700 font-medium">
-              {products.filter(p => p.stock < 10).length} items need restocking
-            </p>
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm border border-red-200 text-center">
+            {error}
           </div>
         )}
 
-        {/* Table */}
-        <InventoryTable
-          products={filteredProducts}
-          onEdit={(id) => alert(`Edit ${id}`)}
-          onDelete={handleDelete}
-        />
+        {/* Table/Loader */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-10 h-10 text-[#7CB342] animate-spin" />
+          </div>
+        ) : (
+          <InventoryTable
+            products={filteredProducts}
+            onEdit={(id) => {
+              const productToEdit = products.find(p => p._id === id);
+              if (productToEdit) {
+                // @ts-ignore - Temporary cast to bypass strict initial mapping types
+                setEditingProduct(productToEdit);
+                setIsEditModalOpen(true);
+              }
+            }}
+            onDelete={handleDelete}
+          />
+        )}
 
-        {/* Modal */}
+        {/* Modals */}
         <AddProductModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onAdd={handleAdd}
+        />
+        
+        <EditProductModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingProduct(null);
+          }}
+          onUpdate={handleUpdate}
+          initialData={editingProduct}
         />
       </main>
     </div>

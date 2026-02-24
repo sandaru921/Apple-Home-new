@@ -1,7 +1,7 @@
-// components/AddProductModal.tsx
+// components/EditProductModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2, UploadCloud, Check } from 'lucide-react';
 import Image from 'next/image';
 
@@ -24,6 +24,7 @@ const PREDEFINED_COLORS = [
 ];
 
 interface Product {
+  _id?: string;
   category?: string;
   model: string;
   colors?: string[];
@@ -47,11 +48,12 @@ const CONDITIONS = ['New', 'Pristine (Used)', 'Excellent (Used)', 'Good (Used)']
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (product: any) => void;
+  onUpdate: (product: any) => void;
+  initialData: Product | null;
 }
 
-export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
-  const [category, setCategory] = useState(CATEGORIES[1]); // Default: Brand New iPhones
+export default function EditProductModal({ isOpen, onClose, onUpdate, initialData }: Props) {
+  const [category, setCategory] = useState(CATEGORIES[1]);
   const [model, setModel] = useState(PREDEFINED_MODELS[0]);
   const [customModel, setCustomModel] = useState('');
   const [isCustomModel, setIsCustomModel] = useState(false);
@@ -80,10 +82,43 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle Category logic switch
   const isIphoneCategory = category === 'Used iPhones' || category === 'Brand New iPhones';
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setCategory(initialData.category || CATEGORIES[1]);
+      
+      if (PREDEFINED_MODELS.includes(initialData.model)) {
+        setModel(initialData.model);
+        setIsCustomModel(false);
+        setCustomModel('');
+      } else {
+        setModel('custom_entry');
+        setIsCustomModel(true);
+        setCustomModel(initialData.model);
+      }
+
+      setPrice(initialData.price.toString());
+      setStock((initialData.stock ?? 0).toString());
+      
+      setIncludeCondition(!!initialData.condition);
+      setCondition(initialData.condition || 'New');
+      
+      setIncludeBatteryHealth(initialData.batteryHealth !== undefined && initialData.batteryHealth !== null);
+      setBatteryHealth((initialData.batteryHealth ?? 100).toString());
+      
+      setIncludeUnlocked(initialData.isUnlocked !== undefined && initialData.isUnlocked !== null);
+      setIsUnlocked(initialData.isUnlocked ?? true);
+      
+      setSelectedStorage(initialData.storage || []);
+      setSelectedColors(initialData.colors || []);
+      setDescription(initialData.description || '');
+      setImagePreview(initialData.imageUrl || null);
+      setImageFile(null); // Clear any pending file if navigating
+    }
+  }, [initialData, isOpen]);
+
+  if (!isOpen || !initialData) return null;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,8 +139,8 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageFile) {
-      setError('Please select a product image to upload.');
+    if (!imagePreview && !imageFile) {
+      setError('Please select a product image.');
       return;
     }
     if (selectedStorage.length === 0 || selectedColors.length === 0) {
@@ -117,7 +152,6 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
     setError('');
 
     try {
-      // Resolve actual model name
       const finalModelName = (!isIphoneCategory || isCustomModel) ? customModel : model;
       if (!finalModelName.trim()) {
         setError('Please provide a Model Name.');
@@ -125,28 +159,33 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
         return;
       }
 
-      // 1. Upload Image to Cloudinary
-      const formData = new FormData();
-      formData.append('type', 'productImage');
-      formData.append('image', imageFile);
+      let finalImageUrl = initialData.imageUrl;
 
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      // 1. Upload new image if file is selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('type', 'productImage');
+        formData.append('image', imageFile);
 
-      if (!uploadRes.ok) throw new Error('Failed to upload image to Cloudinary');
-      
-      const { url: imageUrl } = await uploadRes.json();
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      // 2. Save Product to Database
+        if (!uploadRes.ok) throw new Error('Failed to upload image to Cloudinary');
+        
+        const { url: newImageUrl } = await uploadRes.json();
+        finalImageUrl = newImageUrl;
+      }
+
+      // 2. Update Product in Database
       const payload: Product = {
         category,
         model: finalModelName,
         price: Number(price),
         stock: Number(stock),
         description,
-        imageUrl,
+        imageUrl: finalImageUrl,
         ...(selectedStorage.length > 0 && { storage: selectedStorage }),
         ...(selectedColors.length > 0 && { colors: selectedColors }),
         ...(includeCondition && { condition }),
@@ -154,39 +193,19 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
         ...(includeUnlocked && { isUnlocked })
       };
 
-      const res = await fetch('/api/iphones', {
-        method: 'POST',
+      const res = await fetch(`/api/iphones/${initialData._id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to add product record');
+        throw new Error(data.error || 'Failed to update product record');
       }
 
-      const newProduct = await res.json();
-      onAdd(newProduct);
-      
-      // Reset form
-      setCategory(CATEGORIES[1]);
-      setModel(PREDEFINED_MODELS[0]);
-      setCustomModel('');
-      setIsCustomModel(false);
-      setPrice('');
-      setStock('10');
-      setIncludeCondition(false);
-      setCondition('New');
-      setIncludeBatteryHealth(false);
-      setBatteryHealth('100');
-      setIncludeUnlocked(false);
-      setIsUnlocked(true);
-      setSelectedStorage([]);
-      setSelectedColors([]);
-      setDescription('');
-      setImageFile(null);
-      setImagePreview(null);
-      
+      const updatedProduct = await res.json();
+      onUpdate(updatedProduct);
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -206,7 +225,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
         </button>
 
         <h2 className="text-2xl font-bold mb-6">
-          <span className="text-black">Add New </span>
+          <span className="text-black">Edit </span>
           <span className="text-[#7CB342]">Product</span>
         </h2>
 
@@ -252,7 +271,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
                 value={category}
                 onChange={(e) => {
                   setCategory(e.target.value);
-                  setIsCustomModel(false); // Reset custom toggle on cat change
+                  setIsCustomModel(false);
                 }}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7CB342] text-gray-900"
               >
@@ -269,11 +288,8 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
                     <select
                       value={model}
                       onChange={(e) => {
-                        if (e.target.value === 'custom_entry') {
-                          setIsCustomModel(true);
-                        } else {
-                          setModel(e.target.value);
-                        }
+                        if (e.target.value === 'custom_entry') setIsCustomModel(true);
+                        else setModel(e.target.value);
                       }}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7CB342] text-gray-900"
                     >
@@ -448,7 +464,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd }: Props) {
             disabled={loading}
             className="w-full py-4 bg-[#7CB342] text-white rounded-xl font-bold hover:bg-[#6fa135] transition-all disabled:opacity-70 flex justify-center items-center shadow-lg hover:shadow-[#7CB342]/40"
           >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Upload & Save Product'}
+            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Update Product'}
           </button>
         </form>
       </div>

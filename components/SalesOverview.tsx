@@ -3,12 +3,21 @@
 
 import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
 
-export default function SalesOverview() {
+interface Props {
+  overview: {
+    today: string;
+    week: string;
+    month: string;
+    year: string;
+  };
+}
+
+export default function SalesOverview({ overview }: Props) {
   const stats = [
-    { label: 'Today', value: 'LKR 285,000', change: '+18%', icon: Calendar },
-    { label: 'This Week', value: 'LKR 1.8M', change: '+12%', icon: TrendingUp },
-    { label: 'This Month', value: 'LKR 7.2M', change: '+9%', icon: DollarSign },
-    { label: 'This Year', value: 'LKR 86.4M', change: '+22%', icon: DollarSign },
+    { label: 'Today', value: overview.today, change: 'Daily Total', icon: Calendar },
+    { label: 'This Week', value: overview.week, change: 'Weekly Total', icon: TrendingUp },
+    { label: 'This Month', value: overview.month, change: 'Monthly Total', icon: DollarSign },
+    { label: 'This Year', value: overview.year, change: 'Yearly Total', icon: DollarSign },
   ];
 
   return (
@@ -16,7 +25,7 @@ export default function SalesOverview() {
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.label} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div key={stat.label} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between mb-3">
               <Icon className="w-6 h-6 text-[#7CB342]" />
               <span className="text-sm font-medium text-green-600">{stat.change}</span>

@@ -12,6 +12,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   await connectDB();
   const formData = await request.formData();
@@ -30,6 +32,18 @@ export async function POST(request: Request) {
       const slide = new Slide({ imageUrl: (result as any).secure_url });
       await slide.save();
       return NextResponse.json({ success: true });
+    }
+
+    if (type === 'productImage') {
+      const file = formData.get('image') as File;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'iphone-shop/products' },
+          (err, res) => err ? reject(err) : resolve(res)
+        ).end(buffer);
+      });
+      return NextResponse.json({ url: (result as any).secure_url });
     }
 
     if (type === 'offer') {
