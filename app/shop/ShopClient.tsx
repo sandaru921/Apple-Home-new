@@ -81,7 +81,7 @@ export default function ShopClient({ initialiPhones }: { initialiPhones: iPhone[
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Price: LKR {(priceRange[0] || 0).toLocaleString()} - LKR {(priceRange[1] || 0).toLocaleString()}
+              Price: LKR {(priceRange[0] || 0)?.toLocaleString()} - LKR {(priceRange[1] || 0)?.toLocaleString()}
             </label>
             <input
               type="range"
@@ -114,7 +114,7 @@ export default function ShopClient({ initialiPhones }: { initialiPhones: iPhone[
                   {phone.model}
                 </h3>
                 <p className="text-2xl font-bold text-primary">
-                  LKR {(phone.basePrice || phone.price || 0).toLocaleString()}
+                  LKR {(phone.basePrice || phone.price || 0)?.toLocaleString()}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                   {phone.colors.slice(0, 2).map(c => (

@@ -290,7 +290,7 @@ export default function CustomizePage() {
                   <option value="">-- Choose an iPhone --</option>
                   {inventory.map((item) => (
                     <option key={item._id} value={item._id}>
-                      {item.model} (LKR {(item.basePrice || 0).toLocaleString()})
+                      {item.model} (LKR {(item.basePrice || 0)?.toLocaleString()})
                     </option>
                   ))}
                 </select>
@@ -360,7 +360,7 @@ export default function CustomizePage() {
                       <div className="flex justify-between items-center mt-2 border-t border-gray-50 pt-3">
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">Ends On</span>
-                          <span className="text-sm font-semibold text-gray-700">{new Date(offer.endDate).toLocaleString()}</span>
+                          <span className="text-sm font-semibold text-gray-700">{new Date(offer.endDate)?.toLocaleString()}</span>
                         </div>
                         
                         <button 
@@ -403,7 +403,7 @@ export default function CustomizePage() {
                             </span>
                          </td>
                          <td className="p-4 text-gray-600">
-                            {new Date(offer.endDate).toLocaleString()}
+                            {new Date(offer.endDate)?.toLocaleString()}
                          </td>
                          <td className="p-4 text-right">
                            <button 

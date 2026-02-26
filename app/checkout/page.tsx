@@ -69,7 +69,7 @@ export default function CheckoutPage() {
 
     showConfirm({
       title: 'Confirm Order',
-      message: `You are about to place an order for LKR ${total.toLocaleString()}. Do you want to proceed?`,
+      message: `You are about to place an order for LKR ${total?.toLocaleString()}. Do you want to proceed?`,
       confirmText: 'Place Order',
       onConfirm: handlePlaceOrder,
     });
@@ -139,13 +139,13 @@ export default function CheckoutPage() {
                     </span>
                   )}
                 </span>
-                <span>LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
+                <span>LKR {((item.price || 0) * (item.quantity || 1))?.toLocaleString()}</span>
               </div>
             ))}
             <hr className="my-4 border-gray-200" />
             <div className="flex justify-between text-sm mb-2 text-gray-600">
               <span>Subtotal</span>
-              <span>LKR {(subtotal || 0).toLocaleString()}</span>
+              <span>LKR {(subtotal || 0)?.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm mb-4 text-gray-600">
               <span>Shipping</span>
@@ -153,7 +153,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span className="text-[#7CB342]">LKR {(total || 0).toLocaleString()}</span>
+              <span className="text-[#7CB342]">LKR {(total || 0)?.toLocaleString()}</span>
             </div>
           </div>
 

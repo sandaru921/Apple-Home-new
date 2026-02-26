@@ -61,7 +61,7 @@ export default function InventoryTable({ products, onEdit, onDelete }: Props) {
               
               <div className="flex justify-between items-center mt-2 border-t border-gray-50 pt-2">
                 <div className="flex flex-col">
-                  <span className="text-[#7CB342] font-black text-lg">LKR {(product.basePrice || 0).toLocaleString()}</span>
+                  <span className="text-[#7CB342] font-black text-lg">LKR {(product.basePrice || 0)?.toLocaleString()}</span>
                   <span className="text-sm text-gray-500 font-medium">Qty: {product.stock ?? 0}</span>
                 </div>
                 
@@ -129,7 +129,7 @@ export default function InventoryTable({ products, onEdit, onDelete }: Props) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-[#7CB342] font-bold">LKR {(product.basePrice || 0).toLocaleString()}</span>
+                    <span className="text-[#7CB342] font-bold">LKR {(product.basePrice || 0)?.toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`font-medium ${isLowStock ? 'text-red-600' : 'text-gray-900'}`}>

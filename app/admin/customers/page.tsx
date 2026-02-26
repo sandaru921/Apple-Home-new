@@ -106,7 +106,7 @@ export default function CustomersPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Spent</p>
-                      <p className="font-bold text-[#7CB342]">LKR {(c.spent || 0).toLocaleString()}</p>
+                      <p className="font-bold text-[#7CB342]">LKR {(c.spent || 0)?.toLocaleString()}</p>
                     </div>
                   </div>
 
@@ -162,7 +162,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-900">{c.orders}</td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-[#7CB342]">LKR {(c.spent || 0).toLocaleString()}</span>
+                      <span className="font-bold text-[#7CB342]">LKR {(c.spent || 0)?.toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getLoyaltyColor(c.loyalty)}`}>

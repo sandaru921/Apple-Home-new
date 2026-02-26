@@ -216,11 +216,11 @@ function ProductDetailsContent({ id }: { id: string }) {
                       Save {activeOffer.discountPercent}%
                     </span>
                     <span className="text-gray-400 font-medium line-through text-xl">
-                      LKR {(selectedStoragePrice || 0).toLocaleString()}
+                      LKR {(selectedStoragePrice || 0)?.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-4xl font-extrabold text-red-600">
-                    LKR {((selectedStoragePrice || 0) - ((selectedStoragePrice || 0) * activeOffer.discountPercent / 100)).toLocaleString()}
+                    LKR {((selectedStoragePrice || 0) - ((selectedStoragePrice || 0) * activeOffer.discountPercent / 100))?.toLocaleString()}
                   </p>
                   <p className="text-sm text-red-500 font-medium mt-1">
                     Offer ends {new Date(activeOffer.endDate).toLocaleDateString()}
@@ -228,7 +228,7 @@ function ProductDetailsContent({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="text-3xl font-bold text-gray-900 mb-8">
-                  LKR {(selectedStoragePrice || 0).toLocaleString()}
+                  LKR {(selectedStoragePrice || 0)?.toLocaleString()}
                 </p>
               )}
               {/* Storage Selection */}

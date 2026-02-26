@@ -119,7 +119,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                         <button onClick={() => updateQuantity(itemKey, 1)} className="p-1 hover:bg-gray-100 rounded-md transition"><Plus className="w-3 h-3 text-gray-600" /></button>
                       </div>
                       <span className="font-bold text-[#7CB342]">
-                        LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                        LKR {((item.price || 0) * (item.quantity || 1))?.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -134,7 +134,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           <div className="border-t border-gray-100 p-6 bg-white shrink-0">
             <div className="flex justify-between items-center mb-6">
               <span className="text-gray-600 font-medium">Subtotal</span>
-              <span className="text-2xl font-bold text-gray-900">LKR {(subtotal || 0).toLocaleString()}</span>
+              <span className="text-2xl font-bold text-gray-900">LKR {(subtotal || 0)?.toLocaleString()}</span>
             </div>
             <p className="text-sm text-gray-500 mb-6 text-center">Shipping & taxes calculated at checkout.</p>
             <button

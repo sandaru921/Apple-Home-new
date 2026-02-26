@@ -38,14 +38,14 @@ export async function GET() {
         customer: order.customerDetails.name || 'Guest',
         items: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
         total: order.totalAmount,
-        date: (orderDate ? new Date(orderDate) : new Date()).toLocaleString(),
+        date: (orderDate ? new Date(orderDate) : new Date())?.toLocaleString(),
         status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
       };
     });
 
     const formatCurrency = (num: number) => {
       if (num >= 1000000) return `LKR ${(num/1000000).toFixed(1)}M`;
-      if (num > 0) return `LKR ${(num || 0).toLocaleString()}`;
+      if (num > 0) return `LKR ${(num || 0)?.toLocaleString()}`;
       return 'LKR 0';
     };
 

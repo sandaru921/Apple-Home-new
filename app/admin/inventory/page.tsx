@@ -13,7 +13,8 @@ interface Product {
   _id: string;
   category?: string;
   model: string;
-  price: number;
+  basePrice: number;
+  storageOptions?: { capacity: string; price: number }[];
   stock: number;
   colors?: string[];
   storage?: string[];

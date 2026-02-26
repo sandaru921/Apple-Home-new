@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
                 <span className="text-sm font-medium text-green-600">Total Registered</span>
               </div>
               <p className="text-sm text-gray-500">Customers</p>
-              <p className="text-2xl font-bold">{(data?.customers || 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold">{(data?.customers || 0)?.toLocaleString()}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between mb-3">
@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
                 <span className="text-sm font-medium text-green-600">Gross</span>
               </div>
               <p className="text-sm text-gray-500">Orders</p>
-              <p className="text-2xl font-bold">{(data?.orders || 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold">{(data?.orders || 0)?.toLocaleString()}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
               <div className="flex items-center justify-between mb-3">

@@ -101,7 +101,7 @@ export default function CartPage() {
                           </p>
                         )}
                         <p className="text-2xl font-bold text-[#7CB342] mb-4">
-                          LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                          LKR {((item.price || 0) * (item.quantity || 1))?.toLocaleString()}
                         </p>
 
                         {/* Quantity Controls */}
@@ -142,12 +142,12 @@ export default function CartPage() {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between text-gray-600">
                       <span>Subtotal</span>
-                      <span className="font-semibold">LKR {(subtotal || 0).toLocaleString()}</span>
+                      <span className="font-semibold">LKR {(subtotal || 0)?.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Shipping</span>
                       <span className={shipping === 0 ? 'text-green-600' : 'font-semibold'}>
-                        {shipping === 0 ? 'FREE' : `LKR ${(shipping || 0).toLocaleString()}`}
+                        {shipping === 0 ? 'FREE' : `LKR ${(shipping || 0)?.toLocaleString()}`}
                       </span>
                     </div>
                     {shipping === 0 && (
@@ -156,7 +156,7 @@ export default function CartPage() {
                     <div className="h-px bg-gray-200"></div>
                     <div className="flex justify-between text-xl font-bold">
                       <span>Total</span>
-                      <span className="text-[#7CB342]">LKR {(total || 0).toLocaleString()}</span>
+                      <span className="text-[#7CB342]">LKR {(total || 0)?.toLocaleString()}</span>
                     </div>
                   </div>
 

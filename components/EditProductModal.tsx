@@ -28,9 +28,8 @@ interface Product {
   category?: string;
   model: string;
   colors?: string[];
-  colors?: string[];
   basePrice: number;
-  storageOptions: { capacity: string; price: number }[];
+  storageOptions?: { capacity: string; price: number }[];
   stock: number;
   condition?: string;
   batteryHealth?: number;

@@ -183,7 +183,7 @@ export default function Navbar() {
                           <p className="text-xs font-medium text-gray-400 mt-0.5">{product.category || 'Product'}</p>
                         </div>
                         <div className="font-bold text-[#7CB342] whitespace-nowrap">
-                          LKR {(product.basePrice || product.price || 0).toLocaleString()}
+                          LKR {(product.basePrice || product.price || 0)?.toLocaleString()}
                         </div>
                       </Link>
                     ))}

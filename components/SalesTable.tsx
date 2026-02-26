@@ -57,7 +57,7 @@ export default function SalesTable({ sales }: Props) {
 
              <div className="flex justify-between items-center mt-2 border-t border-gray-50 pt-2">
                 <div className="flex flex-col">
-                  <span className="font-black text-lg text-[#7CB342]">LKR {(sale.total || 0).toLocaleString()}</span>
+                  <span className="font-black text-lg text-[#7CB342]">LKR {(sale.total || 0)?.toLocaleString()}</span>
                   <span className="text-sm text-gray-500 font-medium">{sale.items} Items</span>
                 </div>
                 
@@ -105,7 +105,7 @@ export default function SalesTable({ sales }: Props) {
                 </td>
                 <td className="px-6 py-4 text-gray-600">{sale.items}</td>
                 <td className="px-6 py-4">
-                  <span className="font-bold text-[#7CB342]">LKR {(sale.total || 0).toLocaleString()}</span>
+                  <span className="font-bold text-[#7CB342]">LKR {(sale.total || 0)?.toLocaleString()}</span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{sale.date}</td>
                 <td className="px-6 py-4">

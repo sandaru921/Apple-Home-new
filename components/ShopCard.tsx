@@ -74,7 +74,7 @@ export default function ShopCard({ product, onAddToCart }: Props) {
         <div className="text-left mt-auto">
           {/* Price */}
           <p className="text-xl font-bold text-gray-900 mb-4">
-            LKR {(product.basePrice || product.price || 0).toLocaleString()}
+            LKR {(product.basePrice || product.price || 0)?.toLocaleString()}
           </p>
           
           {/* Actions */}

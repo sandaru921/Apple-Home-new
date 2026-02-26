@@ -285,7 +285,7 @@ export default function Home() {
                     <div className="text-left mt-auto">
                       {/* Price */}
                       <p className="text-xl sm:text-2xl font-black text-gray-900">
-                        LKR {(phone.basePrice || phone.price || 0).toLocaleString()}
+                        LKR {(phone.basePrice || phone.price || 0)?.toLocaleString()}
                       </p>
                     </div>
                   </div>

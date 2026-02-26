@@ -19,7 +19,7 @@ export async function GET() {
     const totalSalesNum = salesResult.length > 0 ? salesResult[0].total : 0;
 
     // Formatting currency to e.g LKR 2.4M or LKR 50K
-    let formattedSales = `LKR ${(totalSalesNum || 0).toLocaleString()}`;
+    let formattedSales = `LKR ${(totalSalesNum || 0)?.toLocaleString()}`;
     if (totalSalesNum >= 1000000) {
       formattedSales = `LKR ${(totalSalesNum / 1000000).toFixed(1)}M`;
     } else if (totalSalesNum >= 1000) {
@@ -47,7 +47,7 @@ export async function GET() {
       activity.push({
         type: 'order',
         date: o.createdAt,
-        message: `Customer ${o.customerDetails.name} placed order for LKR ${(o.totalAmount || 0).toLocaleString()}`
+        message: `Customer ${o.customerDetails.name} placed order for LKR ${(o.totalAmount || 0)?.toLocaleString()}`
       });
     }
 
