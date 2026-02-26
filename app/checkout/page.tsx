@@ -75,9 +75,6 @@ export default function CheckoutPage() {
     });
   };
 
-    });
-  };
-
   if (!isLoaded) return null;
 
   if (cart.length === 0) {

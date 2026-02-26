@@ -27,8 +27,6 @@ export default function CartPage() {
   const shipping = subtotal > 50000 ? 0 : 1500;
   const total = subtotal + shipping;
 
-  const total = subtotal + shipping;
-
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
