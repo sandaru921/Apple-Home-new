@@ -11,7 +11,8 @@ import { ShieldCheck, Truck, Lock, Wrench } from 'lucide-react';
 interface FeaturedPhone {
   _id: string;
   model: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   imageUrl: string;
   stock: number;
 }
@@ -20,10 +21,11 @@ interface Offer {
   _id: string;
   discountPercent: number;
   endDate: string;
-  iPhone: {
+  iPhoneId: {
     _id: string;
     model: string;
-    price: number;
+    price?: number;
+    basePrice?: number;
     imageUrl: string;
   };
 }
@@ -36,11 +38,14 @@ interface Slide {
 interface HomeData {
   slides: Slide[];
   offers: Offer[];
-  featured: FeaturedPhone[];
+  newArrivals: FeaturedPhone[];
+  onSale: FeaturedPhone[];
+  topRated: FeaturedPhone[];
 }
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState<'New Arrival' | 'On Sale' | 'Top Rated'>('New Arrival');
   const [data, setData] = useState<HomeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -57,30 +62,26 @@ export default function Home() {
         // Since we don't have a specific featured API yet, we'll fetch all and slice the first 4 for now
         const phonesRes = await fetch('/api/iphones');
         const allPhones = phonesRes.ok ? await phonesRes.json() : [];
-        const featured = allPhones.filter((p: any) => p.condition === 'New' || !p.condition).slice(0, 4);
+        
+        // Filter logic for tabs
+        const newArrivals = allPhones.filter((p: any) => p.condition === 'New' || !p.condition).slice(0, 8);
+        const onSaleItems = allPhones.filter((p: any) => p.price && p.basePrice && p.price < p.basePrice);
+        const onSale = onSaleItems.length > 0 ? onSaleItems.slice(0, 8) : allPhones.slice(1, 9);
+        const topRatedItems = allPhones.filter((p: any) => p.condition === 'Excellent').slice(0, 8);
+        const topRated = topRatedItems.length > 0 ? topRatedItems : allPhones.slice(2, 10);
 
-        // Fetch valid offers (Mocked for now since Offer API isn't fully CRUD yet, 
-        // but structured to match the expected format)
-        const offers = [
-           {
-              _id: '1',
-              discountPercent: 15,
-              endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              iPhone: featured[0] || {
-                _id: '1',
-                model: 'iPhone 15 Pro',
-                price: 299999,
-                imageUrl: '/api/placeholder/300/300',
-              },
-           },
-        ];
+        // Fetch valid offers 
+        const offersRes = await fetch('/api/offers');
+        const offers = offersRes.ok ? await offersRes.json() : [];
 
         const pageData: HomeData = {
           slides: slides.length > 0 ? slides : [
             { _id: '1', imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' } // Fallback image if DB is empty
           ],
-          offers: featured.length > 0 ? offers : [],
-          featured: featured,
+          offers: offers,
+          newArrivals,
+          onSale,
+          topRated,
         };
         
         setData(pageData);
@@ -130,7 +131,15 @@ export default function Home() {
     );
   }
 
-  const { slides, offers, featured } = data || { slides: [], offers: [], featured: [] };
+  const { slides, offers, newArrivals, onSale, topRated } = data || { slides: [], offers: [], newArrivals: [], onSale: [], topRated: [] };
+
+  const getTabProducts = () => {
+    if (activeTab === 'New Arrival') return newArrivals;
+    if (activeTab === 'On Sale') return onSale;
+    return topRated;
+  };
+
+  const displayProducts = getTabProducts();
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative">
@@ -144,8 +153,8 @@ export default function Home() {
         <Navbar />
 
       {/* Containerized Hero Slider */}
-      <section className="pt-[140px] md:pt-[170px] pb-10 px-4 max-w-7xl mx-auto relative z-10">
-        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden bg-gray-100 shadow-sm group">
+      <section className="pt-[140px] md:pt-[170px] pb-10 px-4 max-w-7xl mx-auto relative z-10 w-full overflow-hidden">
+        <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-2xl md:rounded-3xl overflow-hidden bg-gray-100 shadow-sm group">
           {slides.map((slide: Slide, index: number) => (
             <div
               key={slide._id}
@@ -166,25 +175,25 @@ export default function Home() {
 
           {/* Fallback if no slides exist */}
           {slides.length === 0 && (
-             <div className="absolute inset-0 bg-[#eef5fd] flex flex-col items-center justify-center text-black">
-                <h2 className="text-4xl font-bold mb-2">Welcome to Apple Home</h2>
+             <div className="absolute inset-0 bg-[#eef5fd] flex flex-col items-center justify-center text-black p-4 text-center">
+                <h2 className="text-2xl md:text-4xl font-bold mb-2">Welcome to Apple Home</h2>
                 <p>Premium Apple Products</p>
              </div>
           )}
 
-          {/* Arrows */}
+          {/* Arrows - Larger touch targets for mobile */}
           <button 
             onClick={() => setCurrentSlide(prev => (prev === 0 ? slides.length - 1 : prev - 1))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 md:bg-black/10 md:hover:bg-black/40 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-12 h-12 md:w-10 md:h-10 bg-black/40 md:bg-black/10 md:hover:bg-black/40 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 shadow-lg"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+            <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
           </button>
           
           <button 
             onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 md:bg-black/10 md:hover:bg-black/40 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-12 h-12 md:w-10 md:h-10 bg-black/40 md:bg-black/10 md:hover:bg-black/40 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 shadow-lg"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+            <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
 
@@ -205,21 +214,32 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           {/* Tabs */}
           <div className="flex justify-center gap-8 border-b border-gray-200 mb-10 relative">
-            <button className="pb-3 text-lg font-bold text-gray-900 border-b-2 border-[#7CB342] transition-colors relative">
+            <button 
+              onClick={() => setActiveTab('New Arrival')}
+              className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'New Arrival' ? 'text-gray-900 border-b-2 border-[#7CB342]' : 'text-gray-500 hover:text-gray-900'}`}
+            >
               New Arrival
-              {/* Animated underline explicitly declared for visual weight */}
-              <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#7CB342]"></div>
+              {activeTab === 'New Arrival' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#7CB342]"></div>}
             </button>
-            <button className="pb-3 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">
+            <button 
+              onClick={() => setActiveTab('On Sale')}
+              className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'On Sale' ? 'text-gray-900 border-b-2 border-[#7CB342]' : 'text-gray-500 hover:text-gray-900'}`}
+            >
               On Sale
+              {activeTab === 'On Sale' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#7CB342]"></div>}
             </button>
-            <button className="pb-3 text-lg font-medium text-gray-500 hover:text-gray-900 transition-colors">
+            <button 
+              onClick={() => setActiveTab('Top Rated')}
+              className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'Top Rated' ? 'text-gray-900 border-b-2 border-[#7CB342]' : 'text-gray-500 hover:text-gray-900'}`}
+            >
               Top Rated
+              {activeTab === 'Top Rated' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#7CB342]"></div>}
             </button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featured.map((phone: FeaturedPhone, index: number) => {
+          {/* Animated wrapper for product changes */}
+          <div key={activeTab} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-6 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth animate-fade-in">
+            {displayProducts.map((phone: FeaturedPhone, index: number) => {
               const isOutOfStock = phone.stock <= 0;
               const isLowStock = phone.stock > 0 && phone.stock < 10;
               
@@ -227,32 +247,32 @@ export default function Home() {
                 <Link
                   href={`/shop/${phone._id}`}
                   key={phone._id}
-                  className="group relative bg-white border border-gray-100 overflow-hidden hover:shadow-xl hover:border-transparent transition-all duration-300 flex flex-col h-full rounded-xl"
+                  className="group relative bg-white border border-gray-100 overflow-hidden hover:shadow-xl hover:border-transparent transition-all duration-300 flex flex-col h-full rounded-xl shrink-0 w-[85vw] sm:w-auto snap-center"
                 >
                   {/* Stock Badges */}
                   {isOutOfStock ? (
-                    <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-gray-500 text-white rounded-full text-xs font-bold">
+                    <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-gray-500 text-white rounded-full text-xs font-bold shadow-sm">
                       Out of Stock
                     </div>
                   ) : isLowStock ? (
-                    <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold">
+                    <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold shadow-sm">
                       Only {phone.stock} left
                     </div>
                   ) : null}
 
-                  <div className="relative p-6 bg-white h-full flex flex-col justify-between">
+                  <div className="relative p-5 sm:p-6 bg-white h-full flex flex-col justify-between">
                     {/* Category text */}
                     <div className="text-left mb-2">
                       <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Product</span>
                     </div>
 
                     {/* Product Title matched to vivid blue text */}
-                    <h3 className="text-[1.1rem] font-bold text-gray-900 leading-snug mb-6 group-hover:text-[#7CB342] transition-colors text-left flex-1">
+                    <h3 className="text-[1.1rem] font-bold text-gray-900 leading-snug mb-5 sm:mb-6 group-hover:text-[#7CB342] transition-colors text-left flex-1 border-b border-transparent">
                       {phone.model}
                     </h3>
 
                     {/* Product Image */}
-                    <div className="relative h-56 mb-4 w-full bg-white flex items-center justify-center p-2">
+                    <div className="relative h-48 sm:h-56 mb-4 w-full bg-white flex items-center justify-center p-2 rounded-xl">
                       <Image
                         src={phone.imageUrl}
                         alt={phone.model}
@@ -264,8 +284,8 @@ export default function Home() {
                     
                     <div className="text-left mt-auto">
                       {/* Price */}
-                      <p className="text-xl font-bold text-gray-900">
-                        LKR {phone.price.toLocaleString()}
+                      <p className="text-xl sm:text-2xl font-black text-gray-900">
+                        LKR {(phone.basePrice || phone.price || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -287,30 +307,30 @@ export default function Home() {
           
           <div className="relative z-10 max-w-7xl mx-auto text-center">
             {/* Pulsing Badge */}
-            <div className="inline-flex items-center gap-2 px-6 py-2 bg-[#7CB342]/10 backdrop-blur-md border border-[#7CB342]/30 rounded-full text-sm font-bold text-[#7CB342] mb-8 shadow-sm">
-              <span className="relative flex h-3 w-3">
+            <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 bg-[#7CB342]/10 backdrop-blur-md border border-[#7CB342]/30 rounded-full text-xs sm:text-sm font-bold text-[#7CB342] mb-6 sm:mb-8 shadow-sm">
+              <span className="relative flex h-2 w-2 sm:h-3 sm:w-3">
                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7CB342] opacity-75"></span>
-                 <span className="relative inline-flex rounded-full h-3 w-3 bg-[#7CB342]"></span>
+                 <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-[#7CB342]"></span>
               </span>
               FLASH SALE ENDING SOON
             </div>
             
-            <h2 className="text-5xl md:text-8xl font-black mb-4 text-[#7CB342] drop-shadow-sm">
+            <h2 className="text-5xl sm:text-6xl md:text-8xl font-black mb-2 sm:mb-4 text-[#7CB342] drop-shadow-sm leading-tight">
               {offers[0].discountPercent}% OFF
             </h2>
-            <p className="text-3xl md:text-5xl mb-12 text-gray-800 font-light tracking-wide">
-              {offers[0].iPhone.model}
+            <p className="text-2xl sm:text-3xl md:text-5xl mb-8 sm:mb-12 text-gray-800 font-light tracking-wide px-4">
+              {offers[0].iPhoneId?.model}
             </p>
             
             {/* High-Contrast Countdown Panel */}
-            <div className="mb-12 inline-block p-6 bg-white/80 backdrop-blur-lg rounded-3xl border border-gray-100 shadow-xl">
+            <div className="mb-10 sm:mb-12 inline-block w-[95%] max-w-lg p-4 sm:p-6 bg-white/80 backdrop-blur-lg rounded-3xl border border-gray-100 shadow-xl">
               <Countdown endDate={offers[0].endDate} />
             </div>
             
-            <div>
+            <div className="px-4">
               <Link
-                href="/shop"
-                className="inline-block px-14 py-5 bg-[#7CB342] text-white rounded-full font-bold text-xl uppercase tracking-wider hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[#7CB342]/40"
+                href={`/shop/${offers[0].iPhoneId._id}?offer=${offers[0]._id}`}
+                className="inline-block w-full sm:w-auto px-8 sm:px-14 py-4 sm:py-5 bg-[#7CB342] text-white rounded-full font-bold text-lg sm:text-xl uppercase tracking-wider hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[#7CB342]/40"
               >
                 Claim Offer Now
               </Link>
@@ -321,34 +341,34 @@ export default function Home() {
 
       {/* Trust Signals Section */}
       <section className="py-16 px-4 bg-white border-y border-gray-100">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-100">
-          <div className="flex-1 px-8 py-8 md:py-0 flex flex-col items-center text-center group">
-            <div className="w-16 h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
-              <ShieldCheck className="w-8 h-8" />
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-0 md:divide-x divide-gray-100">
+          <div className="p-4 sm:p-6 md:py-0 flex flex-col items-center text-center group bg-gray-50 rounded-2xl md:bg-transparent md:rounded-none">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
+              <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">12-Month Warranty</h3>
-            <p className="text-gray-500 text-sm">Comprehensive coverage on all pristine and new certified devices.</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">12-Month Warranty</h3>
+            <p className="text-gray-500 text-xs sm:text-sm">Comprehensive coverage on all pristine devices.</p>
           </div>
-          <div className="flex-1 px-8 py-8 md:py-0 flex flex-col items-center text-center group">
-            <div className="w-16 h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
-              <Wrench className="w-8 h-8" />
+          <div className="p-4 sm:p-6 md:py-0 flex flex-col items-center text-center group bg-gray-50 rounded-2xl md:bg-transparent md:rounded-none">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
+              <Wrench className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Certified Technicians</h3>
-            <p className="text-gray-500 text-sm">Every used device undergoes a rigorous 40-point quality inspection.</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">Certified Technicians</h3>
+            <p className="text-gray-500 text-xs sm:text-sm">Every device undergoes a 40-point inspection.</p>
           </div>
-          <div className="flex-1 px-8 py-8 md:py-0 flex flex-col items-center text-center group">
-            <div className="w-16 h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
-              <Truck className="w-8 h-8" />
+          <div className="p-4 sm:p-6 md:py-0 flex flex-col items-center text-center group bg-gray-50 rounded-2xl md:bg-transparent md:rounded-none">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
+              <Truck className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Free Fast Shipping</h3>
-            <p className="text-gray-500 text-sm">Island-wide secure delivery, tracked from our door to yours.</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">Free Fast Shipping</h3>
+            <p className="text-gray-500 text-xs sm:text-sm">Island-wide secure delivery, tracked entirely.</p>
           </div>
-          <div className="flex-1 px-8 py-8 md:py-0 flex flex-col items-center text-center group">
-            <div className="w-16 h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
-              <Lock className="w-8 h-8" />
+          <div className="p-4 sm:p-6 md:py-0 flex flex-col items-center text-center group bg-gray-50 rounded-2xl md:bg-transparent md:rounded-none">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#7CB342]/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 text-[#7CB342] group-hover:scale-110 transition-transform duration-300">
+              <Lock className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Secure Checkout</h3>
-            <p className="text-gray-500 text-sm">Encrypted transactions via Apple Pay, Google Pay, and bank cards.</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">Secure Checkout</h3>
+            <p className="text-gray-500 text-xs sm:text-sm">Encrypted transactions via card and banks.</p>
           </div>
         </div>
       </section>

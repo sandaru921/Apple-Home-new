@@ -19,7 +19,7 @@ export async function GET() {
     const totalSalesNum = salesResult.length > 0 ? salesResult[0].total : 0;
 
     // Formatting currency to e.g LKR 2.4M or LKR 50K
-    let formattedSales = `LKR ${totalSalesNum.toLocaleString()}`;
+    let formattedSales = `LKR ${(totalSalesNum || 0).toLocaleString()}`;
     if (totalSalesNum >= 1000000) {
       formattedSales = `LKR ${(totalSalesNum / 1000000).toFixed(1)}M`;
     } else if (totalSalesNum >= 1000) {
@@ -39,7 +39,7 @@ export async function GET() {
     // 5. Recent Activity
     // Fetch latest 2 orders, 2 recent offers, and sort them together
     const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(2);
-    const recentOffers = await Offer.find().populate('iPhone').sort({ createdAt: -1 }).limit(2);
+    const recentOffers = await Offer.find().populate('iPhoneId').sort({ createdAt: -1 }).limit(2);
 
     const activity = [];
     
@@ -47,7 +47,7 @@ export async function GET() {
       activity.push({
         type: 'order',
         date: o.createdAt,
-        message: `Customer ${o.customerDetails.name} placed order for LKR ${o.totalAmount.toLocaleString()}`
+        message: `Customer ${o.customerDetails.name} placed order for LKR ${(o.totalAmount || 0).toLocaleString()}`
       });
     }
 

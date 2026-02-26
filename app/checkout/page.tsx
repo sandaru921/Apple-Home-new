@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
+import { useOverlay } from '@/components/providers/OverlayProvider';
+import { useCart } from '@/components/providers/CartProvider';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cart, setCart] = useState<any[]>([]);
-  const [subtotal, setSubtotal] = useState(0);
+  const { cart, clearCart, isLoaded } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -16,21 +17,13 @@ export default function CheckoutPage() {
     address: ''
   });
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem('appleHomeCart');
-    if (savedCart) {
-      const parsed = JSON.parse(savedCart);
-      setCart(parsed);
-      const total = parsed.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
-      setSubtotal(total);
-    }
-  }, []);
-
+  const subtotal = cart.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 50000 ? 0 : 1500;
   const total = subtotal + shipping;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { showConfirm, showToast } = useOverlay();
+
+  const handlePlaceOrder = async () => {
     setIsSubmitting(true);
 
     try {
@@ -56,20 +49,36 @@ export default function CheckoutPage() {
       });
 
       if (res.ok) {
-        localStorage.removeItem('appleHomeCart');
-        alert('Order placed successfully! Redirecting...');
-        window.dispatchEvent(new Event('cartUpdated'));
+        clearCart();
+        showToast('Order placed successfully!', 'success');
         router.push('/shop');
       } else {
-        alert('Failed to place order.');
+        showToast('Failed to place order. Please try again.', 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('Network error.');
+      showToast('Network error while placing order.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cart.length === 0) return;
+
+    showConfirm({
+      title: 'Confirm Order',
+      message: `You are about to place an order for LKR ${total.toLocaleString()}. Do you want to proceed?`,
+      confirmText: 'Place Order',
+      onConfirm: handlePlaceOrder,
+    });
+  };
+
+    });
+  };
+
+  if (!isLoaded) return null;
 
   if (cart.length === 0) {
     return (
@@ -85,10 +94,10 @@ export default function CheckoutPage() {
   return (
     <>
       <Navbar />
-      <div className="pt-28 min-h-screen bg-gray-50 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10">
+      <div className="pt-28 min-h-screen bg-gray-50 px-4 w-full overflow-hidden">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-4 sm:p-8 flex flex-col md:flex-row gap-10 w-full max-w-[100vw]">
           
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             <h1 className="text-3xl font-bold mb-6">Checkout</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -121,7 +130,7 @@ export default function CheckoutPage() {
             </form>
           </div>
 
-          <div className="w-full md:w-1/3 bg-gray-50 p-6 rounded-2xl h-fit">
+          <div className="w-full md:w-1/3 bg-gray-50 p-6 rounded-2xl h-fit max-w-[100vw] overflow-x-hidden">
             <h2 className="text-xl font-bold mb-4">Summary</h2>
             {cart.map(item => (
               <div key={item.cartItemId || item._id} className="flex justify-between text-sm mb-2">
@@ -133,13 +142,13 @@ export default function CheckoutPage() {
                     </span>
                   )}
                 </span>
-                <span>LKR {(item.price * item.quantity).toLocaleString()}</span>
+                <span>LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}</span>
               </div>
             ))}
             <hr className="my-4 border-gray-200" />
             <div className="flex justify-between text-sm mb-2 text-gray-600">
               <span>Subtotal</span>
-              <span>LKR {subtotal.toLocaleString()}</span>
+              <span>LKR {(subtotal || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm mb-4 text-gray-600">
               <span>Shipping</span>
@@ -147,7 +156,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span className="text-[#7CB342]">LKR {total.toLocaleString()}</span>
+              <span className="text-[#7CB342]">LKR {(total || 0).toLocaleString()}</span>
             </div>
           </div>
 

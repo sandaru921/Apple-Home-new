@@ -4,8 +4,10 @@
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { ShoppingCart, Menu, X, Search, Phone, Mail, Truck, MapPin, Monitor, Smartphone, TabletSmartphone, Watch, Headphones, Cable, LifeBuoy, User, Loader2, Home } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ShoppingCart, Menu, X, Search, Phone, Mail, Truck, MapPin, Monitor, Smartphone, TabletSmartphone, Watch, Headphones, Cable, LifeBuoy, User, Loader2, Home, LayoutDashboard } from 'lucide-react';
 import CartDrawer from './CartDrawer';
+import { useCart } from '@/components/providers/CartProvider';
 
 function NavigationEvents({ setNavigatingTo, setIsOpen }: { setNavigatingTo: (val: string | null) => void, setIsOpen: (val: boolean) => void }) {
   const pathname = usePathname();
@@ -23,8 +25,10 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartCount, setCartCount] = useState(0);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  const { data: session, status } = useSession();
+  const { cartCount } = useCart();
 
   // Live Search States
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -32,26 +36,6 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const router = useRouter();
-
-
-
-  // Load cart count from localStorage
-  useEffect(() => {
-    const updateCartCount = () => {
-      const cart = JSON.parse(localStorage.getItem('appleHomeCart') || '[]');
-      const total = cart.reduce((sum: number, item: any) => sum + item.quantity, 0);
-      setCartCount(total);
-    };
-
-    updateCartCount();
-    window.addEventListener('storage', updateCartCount);
-    window.addEventListener('cartUpdated', updateCartCount);
-
-    return () => {
-      window.removeEventListener('storage', updateCartCount);
-      window.removeEventListener('cartUpdated', updateCartCount);
-    };
-  }, []);
 
   const categories = [
     { name: 'Home', icon: Home, href: '/' },
@@ -199,7 +183,7 @@ export default function Navbar() {
                           <p className="text-xs font-medium text-gray-400 mt-0.5">{product.category || 'Product'}</p>
                         </div>
                         <div className="font-bold text-[#7CB342] whitespace-nowrap">
-                          LKR {product.price.toLocaleString()}
+                          LKR {(product.basePrice || product.price || 0).toLocaleString()}
                         </div>
                       </Link>
                     ))}
@@ -225,10 +209,24 @@ export default function Navbar() {
           </div>
 
           {/* Right Actions (Auth & Cart) */}
-          <div className="flex items-center gap-6">
-            <Link href="/admin/login" className="hidden lg:flex flex-col items-center text-gray-700 hover:text-[#7CB342] transition-colors">
-              <User className="w-6 h-6" />
-            </Link>
+          <div className="flex items-center gap-4 sm:gap-6">
+            {status === 'authenticated' ? (
+              <>
+                {(session?.user as any)?.role === 'admin' && (
+                  <Link href="/admin/dashboard" title="Admin Dashboard" className="hidden lg:flex flex-col items-center text-gray-700 hover:text-[#7CB342] transition-colors">
+                    <LayoutDashboard className="w-6 h-6" />
+                  </Link>
+                )}
+                <Link href="/profile" title="My Profile" className="hidden lg:flex flex-col items-center text-[#7CB342] hover:text-[#689f38] transition-colors relative">
+                  <User className="w-6 h-6" />
+                  <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
+                </Link>
+              </>
+            ) : (
+              <Link href="/login" title="Login / Register" className="hidden lg:flex flex-col items-center text-gray-700 hover:text-[#7CB342] transition-colors">
+                <User className="w-6 h-6" />
+              </Link>
+            )}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-2 text-gray-700 hover:text-[#7CB342] transition-colors flex flex-col items-center"
@@ -281,11 +279,26 @@ export default function Navbar() {
                   {cat.name}
                 </a>
               ))}
-              <div className="pt-2 mt-2 border-t border-gray-100">
-                 <Link href="/admin/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-3 py-4 text-gray-700 font-medium hover:bg-green-50 hover:text-[#7CB342] rounded-xl transition-colors">
-                   <User className="w-5 h-5" />
-                   Login / Account
-                 </Link>
+              <div className="pt-2 mt-2 border-t border-gray-100 flex flex-col gap-1">
+                 {status === 'authenticated' ? (
+                   <>
+                     <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-3 py-4 text-[#7CB342] font-medium hover:bg-green-50 rounded-xl transition-colors bg-green-50/50">
+                       <User className="w-5 h-5" />
+                       My Profile
+                     </Link>
+                     {(session?.user as any)?.role === 'admin' && (
+                       <Link href="/admin/dashboard" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-3 py-4 text-gray-700 font-medium hover:bg-green-50 hover:text-[#7CB342] rounded-xl transition-colors">
+                         <LayoutDashboard className="w-5 h-5" />
+                         Admin Dashboard
+                       </Link>
+                     )}
+                   </>
+                 ) : (
+                   <Link href="/login" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-3 py-4 text-gray-700 font-medium hover:bg-green-50 hover:text-[#7CB342] rounded-xl transition-colors">
+                     <User className="w-5 h-5" />
+                     Login / Account
+                   </Link>
+                 )}
               </div>
             </nav>
           </div>

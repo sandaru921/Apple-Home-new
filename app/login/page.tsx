@@ -3,6 +3,8 @@
 
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import Link from 'next/link';
+import { X } from 'lucide-react';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -23,10 +25,18 @@ export default function AdminLogin() {
 
     if (res?.error) {
       setError('Invalid username or password');
+      setLoading(false);
     } else {
-      window.location.href = '/admin/dashboard';
+      // Fetch the session to determine the user role
+      const sessionRes = await fetch('/api/auth/session');
+      const sessionData = await sessionRes.json();
+      
+      if (sessionData?.user?.role === 'admin') {
+        window.location.href = '/admin/dashboard';
+      } else {
+        window.location.href = '/';
+      }
     }
-    setLoading(false);
   };
 
   return (
@@ -41,7 +51,14 @@ export default function AdminLogin() {
         onSubmit={handleLogin}
         className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 border border-gray-100"
       >
-        {/* Logo + Title */}
+        {/* Close Button */}
+        <Link 
+          href="/" 
+          className="absolute top-6 right-6 p-2 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-full transition-colors z-10"
+          title="Return to Home"
+        >
+          <X className="w-5 h-5" />
+        </Link>
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-[#7CB342]/10 rounded-2xl mb-6">
             <svg className="w-10 h-10 text-[#7CB342]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,10 +66,10 @@ export default function AdminLogin() {
             </svg>
           </div>
           <h1 className="text-4xl font-bold">
-            <span className="text-black">Admin</span>
-            <span className="text-[#7CB342]"> Panel</span>
+            <span className="text-black">Welcome</span>
+            <span className="text-[#7CB342]"> Back</span>
           </h1>
-          <p className="text-gray-500 mt-2 text-sm">Login to manage Apple Home</p>
+          <p className="text-gray-500 mt-2 text-sm">Login to your Apple Home account</p>
         </div>
 
         {/* Username */}
@@ -111,7 +128,7 @@ export default function AdminLogin() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Don't have an account?{' '}
-          <a href="/admin/signup" className="text-[#7CB342] font-semibold hover:underline">
+          <a href="/signup" className="text-[#7CB342] font-semibold hover:underline">
             Sign Up
           </a>
         </div>

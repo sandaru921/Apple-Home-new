@@ -4,11 +4,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Package, ShoppingCart, Users, User, ShieldAlert, BarChart3, Settings, LogOut, Menu, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useOverlay } from '@/components/providers/OverlayProvider';
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { href: '/admin/profile', label: 'My Profile', icon: User },
+  { href: '/admin/users', label: 'Staff / Users', icon: ShieldAlert },
   { href: '/admin/inventory', label: 'Inventory', icon: Package },
   { href: '/admin/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/admin/customers', label: 'Customers', icon: Users },
@@ -19,6 +22,17 @@ const navItems = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { showConfirm } = useOverlay();
+
+  const handleSignOut = () => {
+    showConfirm({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of the admin panel?',
+      confirmText: 'Sign Out',
+      isDestructive: true,
+      onConfirm: () => signOut({ callbackUrl: '/' })
+    });
+  };
 
   return (
     <>
@@ -76,7 +90,7 @@ export default function AdminSidebar() {
       {/* Logout */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100">
         <button
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={handleSignOut}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition"
         >
           <LogOut className="w-5 h-5" />

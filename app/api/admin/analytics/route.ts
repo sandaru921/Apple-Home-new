@@ -19,7 +19,7 @@ export async function GET() {
     });
 
     // Approximate format logic
-    let formattedRevenue = `LKR ${totalRevenue.toLocaleString()}`;
+    let formattedRevenue = `LKR ${(totalRevenue || 0).toLocaleString()}`;
     if (totalRevenue >= 1000000) {
       formattedRevenue = `LKR ${(totalRevenue / 1000000).toFixed(1)}M`;
     } else if (totalRevenue >= 1000) {

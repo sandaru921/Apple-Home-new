@@ -7,6 +7,7 @@ import InventoryTable from '@/components/InventoryTable';
 import AddProductModal from '@/components/AddProductModal';
 import EditProductModal from '@/components/EditProductModal';
 import { Plus, Search, AlertCircle, Loader2 } from 'lucide-react';
+import { useOverlay } from '@/components/providers/OverlayProvider';
 
 interface Product {
   _id: string;
@@ -33,6 +34,7 @@ export default function InventoryPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { showConfirm, showToast } = useOverlay();
 
   useEffect(() => {
     fetchProducts();
@@ -60,17 +62,24 @@ export default function InventoryPage() {
     setProducts((prev) => prev.map(p => p._id === updatedProduct._id ? updatedProduct : p));
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this product?')) {
-      try {
-        const res = await fetch(`/api/iphones/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete product');
-        
-        setProducts((prev) => prev.filter((p) => p._id !== id));
-      } catch (err: any) {
-        alert(err.message);
+  const handleDelete = (id: string) => {
+    showConfirm({
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete this product? This action cannot be undone.',
+      confirmText: 'Delete',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/iphones/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('Failed to delete product');
+          
+          setProducts((prev) => prev.filter((p) => p._id !== id));
+          showToast('Product deleted successfully', 'success');
+        } catch (err: any) {
+          showToast(err.message, 'error');
+        }
       }
-    }
+    });
   };
 
   const filteredProducts = products.filter((p) =>

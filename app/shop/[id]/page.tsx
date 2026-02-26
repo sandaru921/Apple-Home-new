@@ -1,21 +1,24 @@
 // app/shop/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, use, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { ShoppingCart, ArrowLeft, Loader2, Check, Zap, ChevronDown, ChevronUp, ShieldCheck, Battery } from 'lucide-react';
 import Link from 'next/link';
+import { useOverlay } from '@/components/providers/OverlayProvider';
+import { useCart } from '@/components/providers/CartProvider';
 
 interface Product {
   _id: string;
   category?: string;
   model: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   stock: number;
   colors?: string[];
-  storage?: string[];
+  storageOptions?: { capacity: string; price: number }[];
   condition?: string;
   batteryHealth?: number;
   isUnlocked?: boolean;
@@ -23,15 +26,29 @@ interface Product {
   imageUrl: string;
 }
 
-export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+interface Offer {
+  _id: string;
+  discountPercent: number;
+  endDate: string;
+  iPhoneId: {
+    _id: string;
+  };
+}
+
+function ProductDetailsContent({ id }: { id: string }) {
   const router = useRouter();
-  const id = use(params).id;
+  const searchParams = useSearchParams();
+  const offerId = searchParams.get('offer');
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [activeOffer, setActiveOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useOverlay();
+  const { addToCart, cart } = useCart();
   
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedStorage, setSelectedStorage] = useState<string>('');
+  const [selectedStoragePrice, setSelectedStoragePrice] = useState<number>(0);
   
   // Accordion State
   const [openAccordion, setOpenAccordion] = useState<string | null>('description');
@@ -42,13 +59,29 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
         const res = await fetch(`/api/iphones`);
         if (res.ok) {
           const data = await res.json();
-          // Adjust based on if API returns { iphones: [...] } or just an array
           const productsArray = data.iphones || data;
           const found = productsArray?.find((p: Product) => p._id === id);
           if (found) {
             setProduct(found);
             if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
-            if (found.storage && found.storage.length > 0) setSelectedStorage(found.storage[0]);
+            if (found.storageOptions && found.storageOptions.length > 0) {
+              setSelectedStorage(found.storageOptions[0].capacity);
+              setSelectedStoragePrice(found.storageOptions[0].price);
+            } else {
+              setSelectedStoragePrice(found.basePrice || found.price || 0);
+            }
+
+            // If arrived via offer link, validate the offer
+            if (offerId) {
+              const offerRes = await fetch(`/api/offers`);
+              if (offerRes.ok) {
+                const allOffers = await offerRes.json();
+                const matchedOffer = allOffers.find((o: Offer) => o._id === offerId && o.iPhoneId?._id === id);
+                if (matchedOffer && new Date(matchedOffer.endDate) > new Date()) {
+                  setActiveOffer(matchedOffer);
+                }
+              }
+            }
           } else {
             router.push('/shop');
           }
@@ -60,56 +93,37 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
       }
     };
     if (id) fetchProduct();
-  }, [id, router]);
+  }, [id, router, offerId]);
 
   const handleAddToCart = () => {
     if (!product || product.stock <= 0) return;
     
     // Validate only if product explicitly requires these traits
     const hasColors = product.colors && product.colors.length > 0;
-    const hasStorage = product.storage && product.storage.length > 0;
+    const hasStorage = product.storageOptions && product.storageOptions.length > 0;
     
     if (hasColors && !selectedColor) {
-      alert("Please select a finish/color option.");
+      showToast("Please select a finish/color option.", "info");
       return;
     }
     if (hasStorage && !selectedStorage) {
-      alert("Please select a storage capacity.");
+      showToast("Please select a storage capacity.", "info");
       return;
     }
 
-    const saved = localStorage.getItem('appleHomeCart');
-    const cart = saved ? JSON.parse(saved) : [];
-    
-    // Create a specific inventory variation item ID to prevent clustering of different variants
-    const colorSuffix = selectedColor ? `-${selectedColor}` : '';
-    const storageSuffix = selectedStorage ? `-${selectedStorage}` : '';
-    const cartItemId = `${product._id}${colorSuffix}${storageSuffix}`;
-    const existing = cart.find((item: any) => item.cartItemId === cartItemId);
+    const priceToAdd = activeOffer 
+      ? selectedStoragePrice - (selectedStoragePrice * activeOffer.discountPercent / 100)
+      : selectedStoragePrice;
 
-    if (existing) {
-      if (existing.quantity >= product.stock) {
-        alert("Cannot add more to the cart due to low stock bounds.");
-        return;
-      }
-      existing.quantity += 1;
-    } else {
-      cart.push({ 
-        ...product, 
-        cartItemId, 
-        selectedColor: selectedColor || 'Standard', 
-        selectedStorage: selectedStorage || 'Standard', 
-        quantity: 1 
-      });
-    }
-
-    localStorage.setItem('appleHomeCart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('cartUpdated'));
-    
-    // Dynamic alert formatting
-    const variantDesc = [selectedStorage, selectedColor].filter(Boolean).join(', ');
-    const displayModel = variantDesc ? `${product.model} (${variantDesc})` : product.model;
-    alert(`${displayModel} added to cart!`);
+    addToCart({
+      _id: product._id,
+      model: product.model,
+      price: priceToAdd,
+      imageUrl: product.imageUrl,
+      quantity: 1,
+      selectedColor: selectedColor || 'Standard',
+      selectedStorage: selectedStorage || 'Standard'
+    });
   };
 
   if (loading) {
@@ -195,29 +209,49 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                   </span>
                 )}
               </div>
-              
-              <p className="text-3xl font-bold text-gray-900 mb-8">
-                LKR {product.price.toLocaleString()}
-              </p>
-
+              {activeOffer ? (
+                <div className="mb-8">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="bg-red-100 text-red-600 font-bold px-3 py-1 rounded-full text-sm">
+                      Save {activeOffer.discountPercent}%
+                    </span>
+                    <span className="text-gray-400 font-medium line-through text-xl">
+                      LKR {(selectedStoragePrice || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-4xl font-extrabold text-red-600">
+                    LKR {((selectedStoragePrice || 0) - ((selectedStoragePrice || 0) * activeOffer.discountPercent / 100)).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-red-500 font-medium mt-1">
+                    Offer ends {new Date(activeOffer.endDate).toLocaleDateString()}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-gray-900 mb-8">
+                  LKR {(selectedStoragePrice || 0).toLocaleString()}
+                </p>
+              )}
               {/* Storage Selection */}
-              {product.storage && product.storage.length > 0 && (
+              {product.storageOptions && product.storageOptions.length > 0 && (
                 <div className="mb-8">
                   <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">
                     Storage Capacity
                   </h3>
                   <div className="flex flex-wrap gap-3">
-                    {product.storage.map((s) => (
+                    {product.storageOptions.map((opt) => (
                       <button
-                        key={s}
-                        onClick={() => setSelectedStorage(s)}
+                        key={opt.capacity}
+                        onClick={() => {
+                          setSelectedStorage(opt.capacity);
+                          setSelectedStoragePrice(opt.price);
+                        }}
                         className={`px-6 py-3 rounded-xl border-2 font-bold transition-all hover:scale-105 ${
-                          selectedStorage === s
+                          selectedStorage === opt.capacity
                             ? 'border-[#7CB342] bg-[#7CB342] text-white shadow-md'
                             : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        {s}
+                        {opt.capacity}
                       </button>
                     ))}
                   </div>
@@ -344,5 +378,19 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const id = use(params).id;
+  
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-[#7CB342]" />
+      </div>
+    }>
+      <ProductDetailsContent id={id} />
+    </Suspense>
   );
 }

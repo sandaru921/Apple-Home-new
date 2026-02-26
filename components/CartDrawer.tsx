@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useOverlay } from '@/components/providers/OverlayProvider';
+import { useCart } from '@/components/providers/CartProvider';
 
 interface CartItem {
   _id: string;
@@ -25,50 +27,22 @@ interface Props {
 
 export default function CartDrawer({ isOpen, onClose }: Props) {
   const router = useRouter();
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const { cart, removeFromCart, updateQuantity, isLoaded } = useCart();
+  const { showConfirm } = useOverlay();
 
-  useEffect(() => {
-    setIsClient(true);
-    const updateCart = () => {
-      const savedCart = localStorage.getItem('appleHomeCart');
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    };
-    
-    updateCart();
-    window.addEventListener('storage', updateCart);
-    window.addEventListener('cartUpdated', updateCart);
-
-    return () => {
-      window.removeEventListener('storage', updateCart);
-      window.removeEventListener('cartUpdated', updateCart);
-    };
-  }, []);
-
-  const updateQuantity = (idToUpdate: string, delta: number) => {
-    const updatedCart = cart.map(item => {
-      const identifier = item.cartItemId || item._id;
-      return identifier === idToUpdate
-        ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-        : item;
+  const handleRemove = (idToRemove: string, itemName: string) => {
+    showConfirm({
+      title: 'Remove Item',
+      message: `Are you sure you want to remove ${itemName} from your cart?`,
+      confirmText: 'Remove',
+      isDestructive: true,
+      onConfirm: () => removeFromCart(idToRemove)
     });
-    setCart(updatedCart);
-    localStorage.setItem('appleHomeCart', JSON.stringify(updatedCart));
-    window.dispatchEvent(new Event('cartUpdated'));
-  };
-
-  const removeItem = (idToRemove: string) => {
-    const updatedCart = cart.filter(item => (item.cartItemId || item._id) !== idToRemove);
-    setCart(updatedCart);
-    localStorage.setItem('appleHomeCart', JSON.stringify(updatedCart));
-    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  if (!isClient) return null;
+  if (!isLoaded) return null;
 
   return (
     <>
@@ -79,7 +53,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
       />
       
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full max-w-[100vw] sm:max-w-md bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
@@ -126,7 +100,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                     <div className="flex justify-between items-start gap-2">
                       <h3 className="font-bold text-gray-900 leading-tight">{item.model}</h3>
                       <button 
-                        onClick={() => removeItem(itemKey)}
+                        onClick={() => handleRemove(itemKey, item.model)}
                         className="text-gray-400 hover:text-red-500 transition-colors p-1"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -145,7 +119,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                         <button onClick={() => updateQuantity(itemKey, 1)} className="p-1 hover:bg-gray-100 rounded-md transition"><Plus className="w-3 h-3 text-gray-600" /></button>
                       </div>
                       <span className="font-bold text-[#7CB342]">
-                        LKR {(item.price * item.quantity).toLocaleString()}
+                        LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -160,7 +134,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           <div className="border-t border-gray-100 p-6 bg-white shrink-0">
             <div className="flex justify-between items-center mb-6">
               <span className="text-gray-600 font-medium">Subtotal</span>
-              <span className="text-2xl font-bold text-gray-900">LKR {subtotal.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-gray-900">LKR {(subtotal || 0).toLocaleString()}</span>
             </div>
             <p className="text-sm text-gray-500 mb-6 text-center">Shipping & taxes calculated at checkout.</p>
             <button

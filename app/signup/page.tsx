@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { X } from 'lucide-react';
 
 export default function AdminSignup() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function AdminSignup() {
       });
 
       if (res.ok) {
-        router.push('/admin/login');
+        router.push('/login');
       } else {
         const data = await res.json();
         setError(data.error || 'Signup failed');
@@ -50,6 +51,14 @@ export default function AdminSignup() {
         onSubmit={handleSignup}
         className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 border border-gray-100 mt-16"
       >
+        {/* Close Button */}
+        <Link 
+          href="/" 
+          className="absolute top-6 right-6 p-2 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-full transition-colors z-10"
+          title="Return to Home"
+        >
+          <X className="w-5 h-5" />
+        </Link>
         {/* Logo + Title */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-[#7CB342]/10 rounded-2xl mb-6">
@@ -133,7 +142,7 @@ export default function AdminSignup() {
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/admin/login" className="text-[#7CB342] font-semibold hover:underline">
+          <Link href="/login" className="text-[#7CB342] font-semibold hover:underline">
             Login
           </Link>
         </div>

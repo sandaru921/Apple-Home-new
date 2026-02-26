@@ -83,8 +83,60 @@ export default function CustomersPage() {
             <div className="h-16 bg-gray-200 rounded-xl w-full"></div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full max-w-[100vw] sm:max-w-none">
+            
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {filtered.map((c) => (
+                <div key={c._id} className="p-4 bg-white hover:bg-gray-50 flex flex-col gap-3">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full border shrink-0" />
+                      <div>
+                        <p className="font-bold text-gray-900 text-lg">{c.name}</p>
+                        <p className="text-sm text-gray-500">{c.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-xl">
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Orders</p>
+                      <p className="font-bold text-gray-900">{c.orders}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Spent</p>
+                      <p className="font-bold text-[#7CB342]">LKR {(c.spent || 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-2 border-t border-gray-50 pt-3">
+                    <div className="flex flex-col gap-1.5">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium w-fit ${getLoyaltyColor(c.loyalty)}`}>
+                        <Star className="w-3 h-3" />
+                        {c.loyalty}
+                      </span>
+                      <span className="text-xs text-gray-400">Joined {c.joined}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                       <button className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                         <Eye className="w-5 h-5 text-gray-700" />
+                       </button>
+                       <button className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                         <Mail className="w-5 h-5 text-gray-700" />
+                       </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <div className="p-6 text-center text-gray-500">No customers found.</div>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto w-full">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -110,7 +162,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-900">{c.orders}</td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-[#7CB342]">LKR {c.spent.toLocaleString()}</span>
+                      <span className="font-bold text-[#7CB342]">LKR {(c.spent || 0).toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getLoyaltyColor(c.loyalty)}`}>

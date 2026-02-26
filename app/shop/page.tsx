@@ -6,17 +6,19 @@ import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ShopCard from '@/components/ShopCard';
 import { Filter } from 'lucide-react';
+import { useOverlay } from '@/components/providers/OverlayProvider';
+import { useCart } from '@/components/providers/CartProvider';
 
 interface iPhone {
   _id: string;
   category?: string;
   model: string;
-  price: number;
+  basePrice: number;
   imageUrl: string;
   stock: number;
   condition?: string;
   colors?: string[];
-  storage?: string[];
+  storageOptions?: { capacity: string; price: number }[];
   isHot?: boolean;
 }
 
@@ -27,6 +29,7 @@ function ShopContent() {
   const [filter, setFilter] = useState('all');
   const [products, setProducts] = useState<iPhone[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   // Advanced Filters
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
@@ -82,7 +85,9 @@ function ShopContent() {
 
   // Dynamic Filter Options
   const availableColors = Array.from(new Set(products.flatMap(p => p.colors || []))).filter(Boolean);
-  const availableStorage = Array.from(new Set(products.flatMap(p => p.storage || []))).filter(Boolean);
+  const availableStorage = Array.from(new Set(products.flatMap(p => 
+    p.storageOptions ? p.storageOptions.map(opt => opt.capacity) : []
+  ))).filter(Boolean);
 
   const toggleArrayItem = (item: string, current: string[], setter: (val: string[]) => void) => {
     if (current.includes(item)) setter(current.filter(i => i !== item));
@@ -116,33 +121,17 @@ function ShopContent() {
       (p.colors && p.colors.some(c => selectedColors.includes(c)));
 
     const matchesStorage = selectedStorage.length === 0 || 
-      (p.storage && p.storage.some(s => selectedStorage.includes(s)));
+      (p.storageOptions && p.storageOptions.some(opt => selectedStorage.includes(opt.capacity)));
 
     // 5. Price Base
-    const matchesPrice = p.price >= priceRange.min && p.price <= priceRange.max;
+    const matchesPrice = p.basePrice >= priceRange.min && p.basePrice <= priceRange.max;
 
     return matchesSearch && matchesHotLow && matchesCondition && matchesColor && matchesStorage && matchesPrice;
   }).sort((a, b) => {
-    if (sortOption === 'price-low') return a.price - b.price;
-    if (sortOption === 'price-high') return b.price - a.price;
+    if (sortOption === 'price-low') return a.basePrice - b.basePrice;
+    if (sortOption === 'price-high') return b.basePrice - a.basePrice;
     return 0; // 'newest' placeholder
   });
-
-  const addToCart = (product: iPhone) => {
-    const saved = localStorage.getItem('appleHomeCart');
-    const cart = saved ? JSON.parse(saved) : [];
-    const existing = cart.find((item: any) => item._id === product._id);
-
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({ ...product, quantity: 1 });
-    }
-
-    localStorage.setItem('appleHomeCart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('cartUpdated'));
-    alert(`${product.model} added to cart!`);
-  };
 
   return (
     <>
@@ -161,10 +150,10 @@ function ShopContent() {
           </div>
         </section>
 
-        <div className="max-w-7xl mx-auto px-4 mt-12 mb-20 flex flex-col md:flex-row gap-8">
+        <div className="max-w-7xl mx-auto px-4 mt-12 mb-20 flex flex-col md:flex-row gap-8 w-full overflow-hidden">
           
           {/* Sidebar Filters */}
-          <div className="w-full md:w-64 shrink-0 space-y-8">
+          <div className="w-full md:w-64 shrink-0 space-y-8 max-w-[100vw]">
             <div>
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <Filter className="w-5 h-5 text-[#7CB342]" /> Filters
@@ -262,13 +251,13 @@ function ShopContent() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-              <p className="text-gray-600 font-medium">{filtered.length} products found</p>
+          <div className="flex-1 w-full max-w-[100vw] overflow-hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm w-full">
+              <p className="text-gray-600 font-medium whitespace-nowrap">{filtered.length} products found</p>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7CB342]"
+                className="w-full sm:w-auto px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7CB342]"
               >
                 <option value="newest">Newest Arrivals</option>
                 <option value="price-low">Price: Low to High</option>

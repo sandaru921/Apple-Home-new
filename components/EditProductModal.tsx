@@ -28,8 +28,9 @@ interface Product {
   category?: string;
   model: string;
   colors?: string[];
-  storage?: string[];
-  price: number;
+  colors?: string[];
+  basePrice: number;
+  storageOptions: { capacity: string; price: number }[];
   stock: number;
   condition?: string;
   batteryHealth?: number;
@@ -58,7 +59,7 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
   const [customModel, setCustomModel] = useState('');
   const [isCustomModel, setIsCustomModel] = useState(false);
 
-  const [price, setPrice] = useState('');
+  const [basePrice, setBasePrice] = useState('');
   const [stock, setStock] = useState('10');
   
   // Optional Toggles
@@ -71,7 +72,7 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
   const [includeUnlocked, setIncludeUnlocked] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(true);
 
-  const [selectedStorage, setSelectedStorage] = useState<string[]>([]);
+  const [storageOptions, setStorageOptions] = useState<{ capacity: string; price: string }[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   
@@ -98,7 +99,7 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
         setCustomModel(initialData.model);
       }
 
-      setPrice(initialData.price.toString());
+      setBasePrice(initialData.basePrice?.toString() || '');
       setStock((initialData.stock ?? 0).toString());
       
       setIncludeCondition(!!initialData.condition);
@@ -110,7 +111,11 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
       setIncludeUnlocked(initialData.isUnlocked !== undefined && initialData.isUnlocked !== null);
       setIsUnlocked(initialData.isUnlocked ?? true);
       
-      setSelectedStorage(initialData.storage || []);
+      setStorageOptions(
+        initialData.storageOptions
+          ? initialData.storageOptions.map(opt => ({ ...opt, price: opt.price.toString() }))
+          : []
+      );
       setSelectedColors(initialData.colors || []);
       setDescription(initialData.description || '');
       setImagePreview(initialData.imageUrl || null);
@@ -143,8 +148,8 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
       setError('Please select a product image.');
       return;
     }
-    if (selectedStorage.length === 0 || selectedColors.length === 0) {
-      setError('Please select at least one storage option and one color.');
+    if (storageOptions.length === 0 || selectedColors.length === 0) {
+      setError('Please add at least one storage option and select a color.');
       return;
     }
 
@@ -182,11 +187,11 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
       const payload: Product = {
         category,
         model: finalModelName,
-        price: Number(price),
+        basePrice: Number(basePrice),
         stock: Number(stock),
         description,
         imageUrl: finalImageUrl,
-        ...(selectedStorage.length > 0 && { storage: selectedStorage }),
+        storageOptions: storageOptions.map(opt => ({ capacity: opt.capacity, price: Number(opt.price) })),
         ...(selectedColors.length > 0 && { colors: selectedColors }),
         ...(includeCondition && { condition }),
         ...(includeBatteryHealth && { batteryHealth: Number(batteryHealth) }),
@@ -326,11 +331,11 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
             {/* Price & Stock */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price (LKR)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Base Price / Starting Price (LKR)</label>
                 <input
                   type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  value={basePrice}
+                  onChange={(e) => setBasePrice(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7CB342]"
                   placeholder="429000"
                   required
@@ -398,28 +403,61 @@ export default function EditProductModal({ isOpen, onClose, onUpdate, initialDat
             </div>
           </div>
 
-          {/* Storage Array */}
+          {/* Dynamic Storage Array */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available Storage</label>
-            <div className="flex flex-wrap gap-2">
-              {PREDEFINED_STORAGE.map(s => {
-                const isSelected = selectedStorage.includes(s);
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => toggleSelection(s, selectedStorage, setSelectedStorage)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                       isSelected 
-                       ? 'bg-[#7CB342] text-white border-transparent shadow-sm' 
-                       : 'bg-white border border-gray-200 text-gray-600 hover:border-[#7CB342]'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                )
-              })}
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Storage Capacities & Pricing</label>
+              <button
+                type="button"
+                onClick={() => setStorageOptions([...storageOptions, { capacity: PREDEFINED_STORAGE[0], price: basePrice }])}
+                className="text-sm font-bold text-[#7CB342] hover:text-[#5c8a2e]"
+              >
+                + Add Storage Option
+              </button>
             </div>
+            {storageOptions.length === 0 ? (
+              <p className="text-sm text-gray-400 italic mb-2">Configure at least one variant to proceed.</p>
+            ) : (
+              <div className="space-y-3">
+                {storageOptions.map((opt, idx) => (
+                  <div key={idx} className="flex gap-3 items-center">
+                    <select
+                      value={opt.capacity}
+                      onChange={(e) => {
+                        const newOpts = [...storageOptions];
+                        newOpts[idx].capacity = e.target.value;
+                        setStorageOptions(newOpts);
+                      }}
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                    >
+                      {PREDEFINED_STORAGE.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={opt.price}
+                        onChange={(e) => {
+                          const newOpts = [...storageOptions];
+                          newOpts[idx].price = e.target.value;
+                          setStorageOptions(newOpts);
+                        }}
+                        placeholder="Price for this capacity"
+                        className="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                        required
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">LKR</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStorageOptions(storageOptions.filter((_, i) => i !== idx))}
+                      className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Colors Array */}

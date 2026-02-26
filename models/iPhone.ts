@@ -5,8 +5,11 @@ const iPhoneSchema = new mongoose.Schema({
   category: { type: String, default: 'Brand New iPhones' }, // NEW
   model: { type: String, required: true },
   colors: [{ type: String }],
-  storage: [{ type: String }],
-  price: { type: Number, required: true },
+  basePrice: { type: Number, required: true },
+  storageOptions: [{
+    capacity: { type: String, required: true },
+    price: { type: Number, required: true }
+  }],
   stock: { type: Number, default: 0 },
   condition: { type: String, required: false },
   batteryHealth: { type: Number, required: false },

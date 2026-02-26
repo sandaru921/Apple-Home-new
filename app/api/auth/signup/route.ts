@@ -24,9 +24,9 @@ export async function POST(req: Request) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user (first user becomes admin by default, others are users - optional logic, but we'll set all as admin for this specific use case)
+    // Create the user (first user becomes admin by default, others are regular users)
     const count = await User.countDocuments();
-    const role = count === 0 ? 'admin' : 'admin'; // Always admin for this panel needs
+    const role = count === 0 ? 'admin' : 'user';
 
     const user = new User({
       username,

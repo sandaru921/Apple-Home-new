@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useCart } from '@/components/providers/CartProvider';
 import { Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 
 interface CartItem {
@@ -19,48 +20,16 @@ interface CartItem {
 }
 
 export default function CartPage() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load cart from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('appleHomeCart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Save to localStorage
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('appleHomeCart', JSON.stringify(cart));
-    }
-  }, [cart, isLoading]);
-
-  // Update quantity
-  const updateQuantity = (idToUpdate: string, delta: number) => {
-    setCart(prev =>
-      prev.map(item => {
-        const identifier = item.cartItemId || item._id;
-        return identifier === idToUpdate
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item;
-      })
-    );
-  };
-
-  // Remove item
-  const removeItem = (idToRemove: string) => {
-    setCart(prev => prev.filter(item => (item.cartItemId || item._id) !== idToRemove));
-  };
+  const { cart, updateQuantity, removeFromCart, isLoaded } = useCart();
 
   // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 50000 ? 0 : 1500;
   const total = subtotal + shipping;
 
-  if (isLoading) {
+  const total = subtotal + shipping;
+
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-[#7CB342]/30 border-t-[#7CB342] rounded-full animate-spin"></div>
@@ -134,7 +103,7 @@ export default function CartPage() {
                           </p>
                         )}
                         <p className="text-2xl font-bold text-[#7CB342] mb-4">
-                          LKR {(item.price * item.quantity).toLocaleString()}
+                          LKR {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
                         </p>
 
                         {/* Quantity Controls */}
@@ -157,7 +126,7 @@ export default function CartPage() {
 
                       {/* Remove */}
                       <button
-                        onClick={() => removeItem(itemKey)}
+                        onClick={() => removeFromCart(itemKey)}
                         className="p-3 bg-red-50 rounded-xl hover:bg-red-100 transition self-start"
                       >
                         <Trash2 className="w-5 h-5 text-red-600" />
@@ -175,12 +144,12 @@ export default function CartPage() {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between text-gray-600">
                       <span>Subtotal</span>
-                      <span className="font-semibold">LKR {subtotal.toLocaleString()}</span>
+                      <span className="font-semibold">LKR {(subtotal || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Shipping</span>
                       <span className={shipping === 0 ? 'text-green-600' : 'font-semibold'}>
-                        {shipping === 0 ? 'FREE' : `LKR ${shipping.toLocaleString()}`}
+                        {shipping === 0 ? 'FREE' : `LKR ${(shipping || 0).toLocaleString()}`}
                       </span>
                     </div>
                     {shipping === 0 && (
@@ -189,7 +158,7 @@ export default function CartPage() {
                     <div className="h-px bg-gray-200"></div>
                     <div className="flex justify-between text-xl font-bold">
                       <span>Total</span>
-                      <span className="text-[#7CB342]">LKR {total.toLocaleString()}</span>
+                      <span className="text-[#7CB342]">LKR {(total || 0).toLocaleString()}</span>
                     </div>
                   </div>
 

@@ -8,7 +8,8 @@ import { Search } from 'lucide-react';
 type iPhone = {
   _id: string;
   model: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   imageUrl: string;
   colors: string[];
   storage: string[];
@@ -24,14 +25,14 @@ export default function ShopClient({ initialiPhones }: { initialiPhones: iPhone[
 
   const allColors = Array.from(new Set(iphones.flatMap(p => p.colors)));
   const allStorage = Array.from(new Set(iphones.flatMap(p => p.storage)));
-  const maxPrice = Math.max(...iphones.map(p => p.price), 1000000);
+  const maxPrice = Math.max(...iphones.map(p => (p.basePrice || p.price || 0)), 1000000);
 
   const filtered = useMemo(() => {
     return iphones.filter(phone => {
       const matchesSearch = phone.model.toLowerCase().includes(search.toLowerCase());
       const matchesColor = selectedColors.length === 0 || phone.colors.some(c => selectedColors.includes(c));
       const matchesStorage = selectedStorage.length === 0 || phone.storage.some(s => selectedStorage.includes(s));
-      const matchesPrice = phone.price >= priceRange[0] && phone.price <= priceRange[1];
+      const matchesPrice = (phone.basePrice || phone.price || 0) >= priceRange[0] && (phone.basePrice || phone.price || 0) <= priceRange[1];
       return matchesSearch && matchesColor && matchesStorage && matchesPrice;
     });
   }, [iphones, search, selectedColors, selectedStorage, priceRange]);
@@ -80,7 +81,7 @@ export default function ShopClient({ initialiPhones }: { initialiPhones: iPhone[
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Price: LKR {priceRange[0].toLocaleString()} - LKR {priceRange[1].toLocaleString()}
+              Price: LKR {(priceRange[0] || 0).toLocaleString()} - LKR {(priceRange[1] || 0).toLocaleString()}
             </label>
             <input
               type="range"
@@ -113,7 +114,7 @@ export default function ShopClient({ initialiPhones }: { initialiPhones: iPhone[
                   {phone.model}
                 </h3>
                 <p className="text-2xl font-bold text-primary">
-                  LKR {phone.price.toLocaleString()}
+                  LKR {(phone.basePrice || phone.price || 0).toLocaleString()}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                   {phone.colors.slice(0, 2).map(c => (

@@ -9,7 +9,8 @@ interface Props {
   product: {
     _id: string;
     model: string;
-    price: number;
+    price?: number;
+    basePrice?: number;
     imageUrl: string;
     stock: number;
     isHot?: boolean;
@@ -73,7 +74,7 @@ export default function ShopCard({ product, onAddToCart }: Props) {
         <div className="text-left mt-auto">
           {/* Price */}
           <p className="text-xl font-bold text-gray-900 mb-4">
-            LKR {product.price.toLocaleString()}
+            LKR {(product.basePrice || product.price || 0).toLocaleString()}
           </p>
           
           {/* Actions */}
