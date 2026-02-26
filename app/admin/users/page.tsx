@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, Trash2, Shield, ShieldAlert, User as UserIcon, Calendar, MoreVertical, Plus } from 'lucide-react';
+import { Loader2, Search, Trash2, Shield, ShieldAlert, User as UserIcon, Calendar, MoreVertical, Plus, X } from 'lucide-react';
 import { useOverlay } from '@/components/providers/OverlayProvider';
 import AdminSidebar from '@/components/AdminSidebar';
 
