@@ -4,8 +4,13 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
 import Link from 'next/link';
-import Countdown from '@/components/Countdown';
-import { ShieldCheck, Truck, Lock, Wrench } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const Countdown = dynamic(() => import('@/components/Countdown'), { ssr: false });
+const ShieldCheck = dynamic(() => import('lucide-react').then(mod => mod.ShieldCheck), { ssr: false });
+const Truck = dynamic(() => import('lucide-react').then(mod => mod.Truck), { ssr: false });
+const Lock = dynamic(() => import('lucide-react').then(mod => mod.Lock), { ssr: false });
+const Wrench = dynamic(() => import('lucide-react').then(mod => mod.Wrench), { ssr: false });
 
 // TypeScript interfaces
 interface FeaturedPhone {
@@ -54,37 +59,21 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Slides
-        const slidesRes = await fetch('/api/slides');
-        const slides = slidesRes.ok ? await slidesRes.json() : [];
-
-        // Fetch Featured Phones (iPhones that are marked featured)
-        // Since we don't have a specific featured API yet, we'll fetch all and slice the first 4 for now
-        const phonesRes = await fetch('/api/iphones');
-        const allPhones = phonesRes.ok ? await phonesRes.json() : [];
-        
-        // Filter logic for tabs
-        const newArrivals = allPhones.filter((p: any) => p.condition === 'New' || !p.condition).slice(0, 8);
-        const onSaleItems = allPhones.filter((p: any) => p.price && p.basePrice && p.price < p.basePrice);
-        const onSale = onSaleItems.length > 0 ? onSaleItems.slice(0, 8) : allPhones.slice(1, 9);
-        const topRatedItems = allPhones.filter((p: any) => p.condition === 'Excellent').slice(0, 8);
-        const topRated = topRatedItems.length > 0 ? topRatedItems : allPhones.slice(2, 10);
-
-        // Fetch valid offers 
-        const offersRes = await fetch('/api/offers');
-        const offers = offersRes.ok ? await offersRes.json() : [];
-
-        const pageData: HomeData = {
-          slides: slides.length > 0 ? slides : [
-            { _id: '1', imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' } // Fallback image if DB is empty
-          ],
-          offers: offers,
-          newArrivals,
-          onSale,
-          topRated,
-        };
-        
-        setData(pageData);
+        const res = await fetch('/api/home');
+        if (res.ok) {
+          const homeData = await res.json();
+          
+          const pageData: HomeData = {
+            slides: homeData.slides?.length > 0 ? homeData.slides : [
+              { _id: '1', imageUrl: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' } // Fallback image if DB is empty
+            ],
+            offers: homeData.offers,
+            newArrivals: homeData.newArrivals,
+            onSale: homeData.onSale,
+            topRated: homeData.topRated,
+          };
+          setData(pageData);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

@@ -5,10 +5,18 @@ import iPhone from '@/models/iPhone';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await connectDB();
-    const offers = await Offer.find()
+    const { searchParams } = new URL(req.url);
+    const iphoneId = searchParams.get('iphoneId');
+    
+    let query: any = {};
+    if (iphoneId) {
+      query.iPhoneId = iphoneId;
+    }
+
+    const offers = await Offer.find(query)
       .populate('iPhoneId')
       .sort({ createdAt: -1 });
 
