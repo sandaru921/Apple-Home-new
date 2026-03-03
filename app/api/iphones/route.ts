@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDB();
-    const iphones = await IPhone.find({}).sort({ createdAt: -1 });
+    const iphones = await IPhone.find({}).sort({ createdAt: -1 }).lean();
     return NextResponse.json(iphones);
   } catch (error) {
     console.error('Failed to fetch iPhones:', error);

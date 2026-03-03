@@ -4,6 +4,24 @@ import IPhone from '@/models/iPhone';
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await connectDB();
+    const id = (await params).id;
+
+    const iphone = await IPhone.findById(id).lean();
+    
+    if (!iphone) {
+      return NextResponse.json({ error: 'iPhone not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(iphone);
+  } catch (error) {
+    console.error('Error fetching iPhone:', error);
+    return NextResponse.json({ error: 'Failed to fetch iPhone' }, { status: 500 });
+  }
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
