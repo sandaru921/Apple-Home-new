@@ -44,7 +44,7 @@ export default function ShopCard({ product, onAddToCart }: Props) {
         </div>
       ) : null}
 
-      <div className="relative p-6 bg-white flex-1 flex flex-col">
+      <Link href={`/shop/${product._id}`} className="block relative px-6 pt-6 pb-4 bg-white flex-1 flex flex-col cursor-pointer">
         {/* Category text & Condition */}
         <div className="text-left mb-2 flex justify-between items-center">
           <span className="text-xs text-gray-400 font-medium tracking-wide uppercase">Product</span>
@@ -73,31 +73,36 @@ export default function ShopCard({ product, onAddToCart }: Props) {
         
         <div className="text-left mt-auto">
           {/* Price */}
-          <p className="text-xl font-bold text-gray-900 mb-4">
+          <p className="text-xl font-bold text-gray-900">
             LKR {(product.basePrice || product.price || 0)?.toLocaleString()}
           </p>
+        </div>
+      </Link>
           
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Link
-              href={`/shop/${product._id}`}
-              className="flex-1 flex items-center justify-center py-3 bg-gray-50 border border-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-100 transition-all duration-300 text-sm"
-            >
-              Details
-            </Link>
-            <button
-              onClick={() => onAddToCart(product)}
-              disabled={isOutOfStock}
-              className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all duration-300 text-sm ${
-                isOutOfStock 
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                  : 'bg-[#7CB342] text-white hover:bg-[#6fa135] shadow-lg hover:shadow-[#7CB342]/40'
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {isOutOfStock ? 'Unavailable' : 'Add to Cart'}
-            </button>
-          </div>
+      {/* Actions */}
+      <div className="px-6 pb-6 bg-white">
+        <div className="flex gap-2">
+          <Link
+            href={`/shop/${product._id}`}
+            className="flex-1 flex items-center justify-center py-3 bg-gray-50 border border-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-100 transition-all duration-300 text-sm"
+          >
+            Details
+          </Link>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onAddToCart(product);
+            }}
+            disabled={isOutOfStock}
+            className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all duration-300 text-sm ${
+              isOutOfStock 
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                : 'bg-[#7CB342] text-white hover:bg-[#6fa135] shadow-lg hover:shadow-[#7CB342]/40'
+            }`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {isOutOfStock ? 'Unavailable' : 'Add to Cart'}
+          </button>
         </div>
       </div>
     </div>
