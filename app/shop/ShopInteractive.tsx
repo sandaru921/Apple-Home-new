@@ -10,7 +10,8 @@ export interface iPhone {
   _id: string;
   category?: string;
   model: string;
-  basePrice: number;
+  basePrice?: number;
+  price?: number;
   imageUrl: string;
   stock: number;
   condition?: string;
@@ -93,7 +94,7 @@ function ShopInteractiveContent({ initialProducts }: { initialProducts: iPhone[]
 
     const matchesCondition = selectedConditions.length === 0 || 
       (p.condition ? selectedConditions.includes(p.condition) : false) ||
-      (isNewFilter && (p.category === 'Brand New iPhones' || !p.condition || p.condition === 'New')) ||
+      (isNewFilter && (p.category === 'Brand New iPhones' || p.condition === 'New')) ||
       (isUsedFilter && (p.category === 'Used iPhones' || (p.condition && p.condition !== 'New')));
 
     // 4. Color & Storage
@@ -104,12 +105,15 @@ function ShopInteractiveContent({ initialProducts }: { initialProducts: iPhone[]
       (p.storageOptions && p.storageOptions.some(opt => selectedStorage.includes(opt.capacity)));
 
     // 5. Price Base
-    const matchesPrice = p.basePrice >= priceRange.min && p.basePrice <= priceRange.max;
+    const itemPrice = p.basePrice || p.price || 0;
+    const matchesPrice = itemPrice >= priceRange.min && itemPrice <= priceRange.max;
 
     return matchesSearch && matchesHotLow && matchesCondition && matchesColor && matchesStorage && matchesPrice;
   }).sort((a, b) => {
-    if (sortOption === 'price-low') return a.basePrice - b.basePrice;
-    if (sortOption === 'price-high') return b.basePrice - a.basePrice;
+    const priceA = a.basePrice || a.price || 0;
+    const priceB = b.basePrice || b.price || 0;
+    if (sortOption === 'price-low') return priceA - priceB;
+    if (sortOption === 'price-high') return priceB - priceA;
     return 0; // 'newest' placeholder
   });
 
@@ -245,7 +249,7 @@ function ShopInteractiveContent({ initialProducts }: { initialProducts: iPhone[]
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((phone) => (
-              <ShopCard key={phone._id} product={{...phone, price: phone.basePrice}} onAddToCart={addToCart} />
+              <ShopCard key={phone._id} product={{...phone, price: phone.basePrice || phone.price}} onAddToCart={addToCart} />
             ))}
             {filtered.length === 0 && (
               <div className="col-span-full py-32 text-center flex flex-col items-center justify-center">
