@@ -1,14 +1,19 @@
 import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import ProductInteractive, { Product, Offer } from './ProductInteractive';
-import { getBaseUrl } from '@/lib/utils';
+
 import { Metadata } from 'next';
+
+import { connectDB } from '@/lib/db';
+import IPhone from '@/models/iPhone';
+import OfferModel from '@/models/Offer';
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/iphones/${id}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
+    await connectDB();
+    const product = await IPhone.findById(id).lean();
+    if (!product) return null;
+    return JSON.parse(JSON.stringify(product));
   } catch (error) {
     console.error('Failed to fetch product on server:', error);
     return null;
@@ -17,12 +22,10 @@ async function getProduct(id: string): Promise<Product | null> {
 
 async function getOffer(id: string, offerId: string): Promise<Offer | null> {
   try {
-    const res = await fetch(`${getBaseUrl()}/api/offers?iphoneId=${id}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const productOffers = await res.json();
-    const matched = productOffers.find((o: Offer) => o._id === offerId && o.iPhoneId?._id === id);
+    await connectDB();
+    const matched: any = await OfferModel.findOne({ _id: offerId, iPhoneId: id }).populate('iPhoneId').lean();
     if (matched && new Date(matched.endDate) > new Date()) {
-      return matched;
+      return JSON.parse(JSON.stringify(matched));
     }
     return null;
   } catch (error) {
